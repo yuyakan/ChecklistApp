@@ -1,7 +1,8 @@
 import Foundation
 import SwiftData
- import SwiftUI
- import Combine
+import SwiftUI
+import Combine
+import WidgetKit
 
 @MainActor
 class HomeViewModel: ObservableObject {
@@ -36,5 +37,8 @@ class HomeViewModel: ObservableObject {
             let checklist = filteredList[index]
             modelContext.delete(checklist)
         }
+        // 明示的に保存してからWidgetを更新
+        try? modelContext.save()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }

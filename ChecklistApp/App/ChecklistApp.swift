@@ -3,19 +3,7 @@ import SwiftData
 
 @main
 struct ChecklistApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Checklist.self,
-            ChecklistItemModel.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    var sharedModelContainer: ModelContainer = AppGroupContainer.modelContainer
 
     var body: some Scene {
         WindowGroup {

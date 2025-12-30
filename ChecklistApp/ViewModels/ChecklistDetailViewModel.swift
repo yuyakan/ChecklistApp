@@ -1,6 +1,7 @@
 import Foundation
- import SwiftUI
- import Combine
+import SwiftUI
+import Combine
+import WidgetKit
 
 @MainActor
 class ChecklistDetailViewModel: ObservableObject {
@@ -22,6 +23,7 @@ class ChecklistDetailViewModel: ObservableObject {
     func toggleItem(_ item: ChecklistItemModel) {
         item.isCompleted.toggle()
         checklist.updatedAt = Date()
+        reloadWidget()
     }
 
     func addItem() {
@@ -37,6 +39,7 @@ class ChecklistDetailViewModel: ObservableObject {
 
         checklist.addItem(item)
         resetNewItemFields()
+        reloadWidget()
     }
 
     func deleteItems(at offsets: IndexSet) {
@@ -44,6 +47,7 @@ class ChecklistDetailViewModel: ObservableObject {
         for index in offsets {
             checklist.removeItem(sortedItems[index])
         }
+        reloadWidget()
     }
 
     func moveItems(from source: IndexSet, to destination: Int) {
@@ -87,5 +91,9 @@ class ChecklistDetailViewModel: ObservableObject {
         itemNote = ""
         selectedPriority = .medium
         showingAddItem = false
+    }
+
+    private func reloadWidget() {
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }

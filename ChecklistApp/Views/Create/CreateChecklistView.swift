@@ -1,5 +1,6 @@
- import SwiftUI
+import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct CreateChecklistView: View {
     @Environment(\.modelContext) private var modelContext
@@ -97,7 +98,10 @@ struct CreateChecklistView: View {
 
     private func saveChecklist(_ checklist: Checklist) {
         modelContext.insert(checklist)
+        // 明示的に保存してからウィジェットを更新
+        try? modelContext.save()
         viewModel.reset()
+        WidgetCenter.shared.reloadAllTimelines()
         dismiss()
     }
 }
