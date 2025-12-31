@@ -6,34 +6,33 @@ struct SettingsView: View {
     @AppStorage("appearanceMode") private var appearanceMode: String = "system"
 
     var body: some View {
-        NavigationStack {
-            Form {
-                // 外観設定
-                Section {
-                    Picker("テーマ", selection: $appearanceMode) {
-                        Text("システム設定に従う").tag("system")
-                        Text("ライト").tag("light")
-                        Text("ダーク").tag("dark")
-                    }
-                } header: {
-                    Text("外観")
-                } footer: {
-                    Text("アプリの外観モードを設定します")
+        Form {
+            // 外観設定
+            Section {
+                Picker("テーマ", selection: $appearanceMode) {
+                    Text("システム設定に従う").tag("system")
+                    Text("ライト").tag("light")
+                    Text("ダーク").tag("dark")
                 }
-                
-                // デフォルト設定
-                Section {
-                    Picker("デフォルトカテゴリ", selection: $defaultCategory) {
-                        ForEach(Category.allCases, id: \.self) { category in
-                            Label(category.description, systemImage: category.icon)
-                                .tag(category.rawValue)
-                        }
+            } header: {
+                Text("外観")
+                    .padding(.top, 8)
+            } footer: {
+                Text("アプリの外観モードを設定します")
+            }
+
+            // デフォルト設定
+            Section {
+                Picker("デフォルトカテゴリ", selection: $defaultCategory) {
+                    ForEach(Category.allCases, id: \.self) { category in
+                        Label(category.description, systemImage: category.icon)
+                            .tag(category.rawValue)
                     }
-                } header: {
-                    Text("デフォルト設定")
-                } footer: {
-                    Text("新規チェックリスト作成時のデフォルトカテゴリを設定します")
                 }
+            } header: {
+                Text("デフォルト設定")
+            } footer: {
+                Text("新規チェックリスト作成時のデフォルトカテゴリを設定します")
             }
         }
     }

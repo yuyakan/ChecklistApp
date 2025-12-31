@@ -36,7 +36,8 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("チェックリスト")
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $viewModel.searchText, prompt: "検索")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
