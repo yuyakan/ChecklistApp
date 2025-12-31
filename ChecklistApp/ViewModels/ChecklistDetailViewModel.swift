@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import Combine
 import WidgetKit
+import ActivityKit
 
 @MainActor
 class ChecklistDetailViewModel: ObservableObject {
@@ -24,6 +25,7 @@ class ChecklistDetailViewModel: ObservableObject {
         item.isCompleted.toggle()
         checklist.updatedAt = Date()
         reloadWidget()
+        updateLiveActivity(completedItem: item.isCompleted ? item.name : nil)
     }
 
     func addItem() {
@@ -40,6 +42,7 @@ class ChecklistDetailViewModel: ObservableObject {
         checklist.addItem(item)
         resetNewItemFields()
         reloadWidget()
+        updateLiveActivity(completedItem: nil)
     }
 
     func deleteItems(at offsets: IndexSet) {
@@ -48,6 +51,7 @@ class ChecklistDetailViewModel: ObservableObject {
             checklist.removeItem(sortedItems[index])
         }
         reloadWidget()
+        updateLiveActivity(completedItem: nil)
     }
 
     func moveItems(from source: IndexSet, to destination: Int) {
@@ -95,5 +99,25 @@ class ChecklistDetailViewModel: ObservableObject {
 
     private func reloadWidget() {
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func updateLiveActivity(completedItem: String?) {
+        if checklist.isCompleted {
+            // すべて完了したらLive Activityを終了
+            LiveActivityService.shared.completeActivity(for: checklist)
+        } else {
+            // 進捗を更新
+            LiveActivityService.shared.updateActivity(for: checklist, lastCompletedItem: completedItem)
+        }
+    }
+
+    /// Live Activityを開始
+    func startLiveActivity() {
+        LiveActivityService.shared.startActivity(for: checklist)
+    }
+
+    /// Live Activityを終了
+    func endLiveActivity() {
+        LiveActivityService.shared.endActivity(for: checklist.id)
     }
 }

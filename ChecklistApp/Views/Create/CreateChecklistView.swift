@@ -102,6 +102,10 @@ struct CreateChecklistView: View {
         try? modelContext.save()
         viewModel.reset()
         WidgetCenter.shared.reloadAllTimelines()
+
+        // Live Activityを開始
+        LiveActivityService.shared.startActivity(for: checklist)
+
         dismiss()
     }
 }

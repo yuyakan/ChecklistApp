@@ -2,6 +2,7 @@ import WidgetKit
 import SwiftUI
 import SwiftData
 import AppIntents
+import ActivityKit
 
 // MARK: - App Group Container
 
@@ -703,7 +704,6 @@ func progressColor(for progress: Double) -> Color {
 
 // MARK: - Widget Definition
 
-@main
 struct ChecklistWidget: Widget {
     let kind: String = "ChecklistWidget"
 
@@ -722,6 +722,129 @@ struct ChecklistWidget: Widget {
             .accessoryRectangular,
             .accessoryInline
         ])
+    }
+}
+
+// MARK: - Live Activity Widget
+
+struct ChecklistLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: ChecklistActivityAttributes.self) { context in
+            // ロック画面・通知センターのバナー表示
+            LiveActivityBannerView(context: context)
+                .activityBackgroundTint(.black.opacity(0.8))
+                .activitySystemActionForegroundColor(.white)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) { EmptyView() }
+                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
+                DynamicIslandExpandedRegion(.center) { EmptyView() }
+                DynamicIslandExpandedRegion(.bottom) { EmptyView() }
+            } compactLeading: {
+                EmptyView()
+            } compactTrailing: {
+                EmptyView()
+            } minimal: {
+                EmptyView()
+            }
+        }
+    }
+}
+
+// MARK: - Live Activity Views
+
+struct LiveActivityBannerView: View {
+    let context: ActivityViewContext<ChecklistActivityAttributes>
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // 進捗円グラフ
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 5)
+
+                Circle()
+                    .trim(from: 0, to: context.state.progress)
+                    .stroke(
+                        liveActivityProgressColor(for: context.state.progress),
+                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+
+                VStack(spacing: 0) {
+                    Text("\(Int(context.state.progress * 100))")
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    Text("%")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 50, height: 50)
+
+            // 情報とアイテムリスト
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: context.attributes.categoryIcon)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Text(context.attributes.title)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text("\(context.state.completedCount)/\(context.state.totalCount)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                // アイテムリスト
+                ForEach(context.state.items.prefix(4)) { item in
+                    HStack(spacing: 6) {
+                        Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                            .font(.caption2)
+                            .foregroundStyle(item.isCompleted ? .green : .secondary)
+                        Text(item.name)
+                            .font(.caption)
+                            .strikethrough(item.isCompleted)
+                            .foregroundStyle(item.isCompleted ? .secondary : .primary)
+                            .lineLimit(1)
+                        Spacer()
+                    }
+                }
+
+                if context.state.totalCount > 4 {
+                    Text("他 \(context.state.totalCount - 4) 件...")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding()
+    }
+}
+
+private func liveActivityProgressColor(for progress: Double) -> Color {
+    if progress >= 1.0 {
+        return .green
+    } else if progress > 0.7 {
+        return .green
+    } else if progress > 0.3 {
+        return .blue
+    } else {
+        return .orange
+    }
+}
+
+// MARK: - Widget Bundle
+
+@main
+struct ChecklistWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        ChecklistWidget()
+        ChecklistLiveActivity()
     }
 }
 
