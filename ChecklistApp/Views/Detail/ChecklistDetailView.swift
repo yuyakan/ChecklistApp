@@ -172,15 +172,7 @@ struct ChecklistDetailView: View {
     }
 
     private var progressColor: Color {
-        if checklist.isCompleted {
-            return .green
-        } else if checklist.progress > 0.5 {
-            return .blue
-        } else if checklist.progress > 0 {
-            return .orange
-        } else {
-            return .gray
-        }
+        .progress(checklist.progress, isCompleted: checklist.isCompleted)
     }
 }
 

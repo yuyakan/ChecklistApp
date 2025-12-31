@@ -100,20 +100,9 @@ struct ChecklistPreviewView: View {
             .font(.caption2)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(priorityColor(priority).opacity(0.2))
-            .foregroundStyle(priorityColor(priority))
+            .background(Color.priority(priority).opacity(0.2))
+            .foregroundStyle(Color.priority(priority))
             .clipShape(Capsule())
-    }
-
-    private func priorityColor(_ priority: Priority) -> Color {
-        switch priority {
-        case .high:
-            return .red
-        case .medium:
-            return .orange
-        case .low:
-            return .green
-        }
     }
 }
 

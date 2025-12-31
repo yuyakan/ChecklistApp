@@ -64,14 +64,7 @@ struct ChecklistItemRowView: View {
     }
 
     private var priorityColor: Color {
-        switch item.priority {
-        case .high:
-            return .red
-        case .medium:
-            return .orange
-        case .low:
-            return .green
-        }
+        .priority(item.priority)
     }
 
     private var editSheet: some View {
@@ -87,7 +80,7 @@ struct ChecklistItemRowView: View {
                         ForEach(Priority.allCases, id: \.self) { priority in
                             HStack {
                                 Circle()
-                                    .fill(colorForPriority(priority))
+                                    .fill(Color.priority(priority))
                                     .frame(width: 10, height: 10)
                                 Text(priority.description)
                             }
@@ -134,17 +127,6 @@ struct ChecklistItemRowView: View {
         editingName = item.name
         editingNote = item.note ?? ""
         editingPriority = item.priority
-    }
-
-    private func colorForPriority(_ priority: Priority) -> Color {
-        switch priority {
-        case .high:
-            return .red
-        case .medium:
-            return .orange
-        case .low:
-            return .green
-        }
     }
 }
 

@@ -6,11 +6,16 @@ import ActivityKit
 
 // MARK: - App Group Container
 
-enum WidgetAppGroupContainer {
+enum WidgetConstants {
     static let appGroupIdentifier = "group.com.checklistapp.shared"
+    static let maxDisplayItems = 12
+    static let liveActivityUpdateKey = "live_activity_update_checklist_id"
+    static let liveActivityUpdateTimestampKey = "live_activity_update_timestamp"
+}
+
+enum WidgetAppGroupContainer {
+    static let appGroupIdentifier = WidgetConstants.appGroupIdentifier
     private static let currentIndexKey = "widget_current_checklist_index"
-    private static let liveActivityUpdateKey = "live_activity_update_checklist_id"
-    private static let liveActivityUpdateTimestampKey = "live_activity_update_timestamp"
 
     static var containerURL: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
@@ -26,12 +31,12 @@ enum WidgetAppGroupContainer {
     }
 
     static func requestLiveActivityUpdate(checklistId: UUID) {
-        userDefaults?.set(checklistId.uuidString, forKey: liveActivityUpdateKey)
-        userDefaults?.set(Date().timeIntervalSince1970, forKey: liveActivityUpdateTimestampKey)
+        userDefaults?.set(checklistId.uuidString, forKey: WidgetConstants.liveActivityUpdateKey)
+        userDefaults?.set(Date().timeIntervalSince1970, forKey: WidgetConstants.liveActivityUpdateTimestampKey)
     }
 
     static func getPendingLiveActivityUpdate() -> UUID? {
-        guard let idString = userDefaults?.string(forKey: liveActivityUpdateKey),
+        guard let idString = userDefaults?.string(forKey: WidgetConstants.liveActivityUpdateKey),
               let uuid = UUID(uuidString: idString) else {
             return nil
         }
@@ -39,8 +44,8 @@ enum WidgetAppGroupContainer {
     }
 
     static func clearPendingLiveActivityUpdate() {
-        userDefaults?.removeObject(forKey: liveActivityUpdateKey)
-        userDefaults?.removeObject(forKey: liveActivityUpdateTimestampKey)
+        userDefaults?.removeObject(forKey: WidgetConstants.liveActivityUpdateKey)
+        userDefaults?.removeObject(forKey: WidgetConstants.liveActivityUpdateTimestampKey)
     }
 
     static var modelContainer: ModelContainer? {
@@ -739,13 +744,16 @@ struct EmptyStateView: View {
 
 // MARK: - Helper Functions
 
-func progressColor(for progress: Double) -> Color {
-    if progress > 0.7 {
+/// 進捗率に応じた色を返す（Widget共通）
+func progressColor(for progress: Double, isCompleted: Bool = false) -> Color {
+    if isCompleted || progress >= 1.0 {
         return .green
-    } else if progress > 0.3 {
+    } else if progress > 0.5 {
         return .blue
-    } else {
+    } else if progress > 0 {
         return .orange
+    } else {
+        return .gray
     }
 }
 
@@ -811,16 +819,15 @@ struct ChecklistLiveActivity: Widget {
 
 struct LiveActivityBannerView: View {
     let context: ActivityViewContext<ChecklistActivityAttributes>
-    private let maxDisplayItems = 12
 
     // アイテムを左右の列に分割
     private var leftColumnItems: [ChecklistActivityItem] {
-        let items = Array(context.state.items.prefix(maxDisplayItems))
+        let items = Array(context.state.items.prefix(WidgetConstants.maxDisplayItems))
         return items.enumerated().compactMap { $0.offset % 2 == 0 ? $0.element : nil }
     }
 
     private var rightColumnItems: [ChecklistActivityItem] {
-        let items = Array(context.state.items.prefix(maxDisplayItems))
+        let items = Array(context.state.items.prefix(WidgetConstants.maxDisplayItems))
         return items.enumerated().compactMap { $0.offset % 2 == 1 ? $0.element : nil }
     }
 
@@ -883,8 +890,8 @@ struct LiveActivityBannerView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                if context.state.totalCount > maxDisplayItems {
-                    Text("他 \(context.state.totalCount - maxDisplayItems) 件...")
+                if context.state.totalCount > WidgetConstants.maxDisplayItems {
+                    Text("他 \(context.state.totalCount - WidgetConstants.maxDisplayItems) 件...")
                         .font(.system(size: 9))
                         .foregroundStyle(.secondary)
                 }
@@ -914,16 +921,9 @@ struct LiveActivityItemRow: View {
     }
 }
 
+/// Live Activity用の進捗色（progressColor関数を使用）
 private func liveActivityProgressColor(for progress: Double) -> Color {
-    if progress >= 1.0 {
-        return .green
-    } else if progress > 0.7 {
-        return .green
-    } else if progress > 0.3 {
-        return .blue
-    } else {
-        return .orange
-    }
+    progressColor(for: progress, isCompleted: progress >= 1.0)
 }
 
 // MARK: - Widget Bundle

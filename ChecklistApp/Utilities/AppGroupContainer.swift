@@ -1,8 +1,15 @@
 import Foundation
 import SwiftData
 
-enum AppGroupContainer {
+enum AppConstants {
     static let appGroupIdentifier = "group.com.checklistapp.shared"
+    static let maxDisplayItems = 12
+    static let liveActivityUpdateKey = "live_activity_update_checklist_id"
+    static let liveActivityUpdateTimestampKey = "live_activity_update_timestamp"
+}
+
+enum AppGroupContainer {
+    static let appGroupIdentifier = AppConstants.appGroupIdentifier
 
     static var containerURL: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
