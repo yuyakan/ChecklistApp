@@ -7,7 +7,7 @@ class LiveActivityService {
     static let shared = LiveActivityService()
 
     private var currentActivity: Activity<ChecklistActivityAttributes>?
-    private let maxDisplayItems = 8
+    private let maxDisplayItems = 12
 
     private static let appGroupIdentifier = "group.com.checklistapp.shared"
     private static let liveActivityUpdateKey = "live_activity_update_checklist_id"

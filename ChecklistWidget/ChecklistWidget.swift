@@ -811,78 +811,105 @@ struct ChecklistLiveActivity: Widget {
 
 struct LiveActivityBannerView: View {
     let context: ActivityViewContext<ChecklistActivityAttributes>
-    private let maxDisplayItems = 8
+    private let maxDisplayItems = 12
+
+    // アイテムを左右の列に分割
+    private var leftColumnItems: [ChecklistActivityItem] {
+        let items = Array(context.state.items.prefix(maxDisplayItems))
+        return items.enumerated().compactMap { $0.offset % 2 == 0 ? $0.element : nil }
+    }
+
+    private var rightColumnItems: [ChecklistActivityItem] {
+        let items = Array(context.state.items.prefix(maxDisplayItems))
+        return items.enumerated().compactMap { $0.offset % 2 == 1 ? $0.element : nil }
+    }
 
     var body: some View {
         // Live Activity全体をタップでアプリを開く
         Link(destination: URL(string: "checklistapp://checklist/\(context.attributes.checklistId)")!) {
-            HStack(alignment: .top, spacing: 10) {
-                // 進捗円グラフ
-                ZStack {
-                    Circle()
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 4)
+            VStack(alignment: .leading, spacing: 4) {
+                // ヘッダー
+                HStack {
+                    // 進捗円グラフ
+                    ZStack {
+                        Circle()
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 3)
 
-                    Circle()
-                        .trim(from: 0, to: context.state.progress)
-                        .stroke(
-                            liveActivityProgressColor(for: context.state.progress),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
+                        Circle()
+                            .trim(from: 0, to: context.state.progress)
+                            .stroke(
+                                liveActivityProgressColor(for: context.state.progress),
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
 
-                    VStack(spacing: 0) {
-                        Text("\(Int(context.state.progress * 100))")
-                            .font(.system(.caption, design: .rounded, weight: .bold))
-                        Text("%")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.secondary)
+                        Text("\(Int(context.state.progress * 100))%")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
                     }
+                    .frame(width: 32, height: 32)
+
+                    Image(systemName: context.attributes.categoryIcon)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+
+                    Text(context.attributes.title)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text("\(context.state.completedCount)/\(context.state.totalCount)")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
                 }
-                .frame(width: 40, height: 40)
 
-                // 情報とアイテムリスト
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Image(systemName: context.attributes.categoryIcon)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-
-                        Text(context.attributes.title)
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .lineLimit(1)
-
-                        Spacer()
-
-                        Text("\(context.state.completedCount)/\(context.state.totalCount)")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    // アイテムリスト（表示のみ、タップでアプリを開く）
-                    ForEach(context.state.items.prefix(maxDisplayItems)) { item in
-                        HStack(spacing: 4) {
-                            Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 10))
-                                .foregroundStyle(item.isCompleted ? .green : .secondary)
-                            Text(item.name)
-                                .font(.system(size: 11))
-                                .strikethrough(item.isCompleted)
-                                .foregroundStyle(item.isCompleted ? .secondary : .primary)
-                                .lineLimit(1)
-                            Spacer()
+                // 2列のアイテムリスト
+                HStack(alignment: .top, spacing: 8) {
+                    // 左列
+                    VStack(alignment: .leading, spacing: 1) {
+                        ForEach(leftColumnItems) { item in
+                            LiveActivityItemRow(item: item)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                    if context.state.totalCount > maxDisplayItems {
-                        Text("他 \(context.state.totalCount - maxDisplayItems) 件...")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
+                    // 右列
+                    VStack(alignment: .leading, spacing: 1) {
+                        ForEach(rightColumnItems) { item in
+                            LiveActivityItemRow(item: item)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                if context.state.totalCount > maxDisplayItems {
+                    Text("他 \(context.state.totalCount - maxDisplayItems) 件...")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+// MARK: - Live Activity Item Row
+
+struct LiveActivityItemRow: View {
+    let item: ChecklistActivityItem
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: 9))
+                .foregroundStyle(item.isCompleted ? .green : .secondary)
+            Text(item.name)
+                .font(.system(size: 10))
+                .strikethrough(item.isCompleted)
+                .foregroundStyle(item.isCompleted ? .secondary : .primary)
+                .lineLimit(1)
         }
     }
 }
