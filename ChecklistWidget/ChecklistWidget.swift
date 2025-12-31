@@ -814,53 +814,53 @@ struct LiveActivityBannerView: View {
     private let maxDisplayItems = 8
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            // 進捗円グラフ
-            ZStack {
-                Circle()
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 4)
+        // Live Activity全体をタップでアプリを開く
+        Link(destination: URL(string: "checklistapp://checklist/\(context.attributes.checklistId)")!) {
+            HStack(alignment: .top, spacing: 10) {
+                // 進捗円グラフ
+                ZStack {
+                    Circle()
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 4)
 
-                Circle()
-                    .trim(from: 0, to: context.state.progress)
-                    .stroke(
-                        liveActivityProgressColor(for: context.state.progress),
-                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
+                    Circle()
+                        .trim(from: 0, to: context.state.progress)
+                        .stroke(
+                            liveActivityProgressColor(for: context.state.progress),
+                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
 
-                VStack(spacing: 0) {
-                    Text("\(Int(context.state.progress * 100))")
-                        .font(.system(.caption, design: .rounded, weight: .bold))
-                    Text("%")
-                        .font(.system(size: 8))
-                        .foregroundStyle(.secondary)
+                    VStack(spacing: 0) {
+                        Text("\(Int(context.state.progress * 100))")
+                            .font(.system(.caption, design: .rounded, weight: .bold))
+                        Text("%")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.secondary)
+                    }
                 }
-            }
-            .frame(width: 40, height: 40)
+                .frame(width: 40, height: 40)
 
-            // 情報とアイテムリスト
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Image(systemName: context.attributes.categoryIcon)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                // 情報とアイテムリスト
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Image(systemName: context.attributes.categoryIcon)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
 
-                    Text(context.attributes.title)
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .lineLimit(1)
+                        Text(context.attributes.title)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .lineLimit(1)
 
-                    Spacer()
+                        Spacer()
 
-                    Text("\(context.state.completedCount)/\(context.state.totalCount)")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                }
+                        Text("\(context.state.completedCount)/\(context.state.totalCount)")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
 
-                // アイテムリスト（タップでアプリを開いてチェック切り替え）
-                // Link経由でURLスキームを使用することでローディング問題を回避
-                ForEach(context.state.items.prefix(maxDisplayItems)) { item in
-                    Link(destination: URL(string: "checklistapp://toggle/\(item.id)")!) {
+                    // アイテムリスト（表示のみ、タップでアプリを開く）
+                    ForEach(context.state.items.prefix(maxDisplayItems)) { item in
                         HStack(spacing: 4) {
                             Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
                                 .font(.system(size: 10))
@@ -872,19 +872,18 @@ struct LiveActivityBannerView: View {
                                 .lineLimit(1)
                             Spacer()
                         }
-                        .contentShape(Rectangle())
+                    }
+
+                    if context.state.totalCount > maxDisplayItems {
+                        Text("他 \(context.state.totalCount - maxDisplayItems) 件...")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
                     }
                 }
-
-                if context.state.totalCount > maxDisplayItems {
-                    Text("他 \(context.state.totalCount - maxDisplayItems) 件...")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
     }
 }
 

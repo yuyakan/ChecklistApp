@@ -1,13 +1,15 @@
- import SwiftUI
+import SwiftUI
 import SwiftData
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var navigationState: NavigationState
     @Query(sort: \Checklist.updatedAt, order: .reverse) private var checklists: [Checklist]
     @StateObject private var viewModel = HomeViewModel()
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack {
                 if checklists.isEmpty && viewModel.searchText.isEmpty && viewModel.selectedCategory == nil {
                     emptyStateView
@@ -76,6 +78,16 @@ struct HomeView: View {
             .sheet(isPresented: $viewModel.showingSettings) {
                 SettingsView()
             }
+            .navigationDestination(for: Checklist.self) { checklist in
+                ChecklistDetailView(checklist: checklist)
+            }
+            .onChange(of: navigationState.selectedChecklistId) { _, newId in
+                if let checklistId = newId,
+                   let checklist = checklists.first(where: { $0.id == checklistId }) {
+                    navigationPath.append(checklist)
+                    navigationState.selectedChecklistId = nil
+                }
+            }
         }
     }
 
@@ -124,5 +136,6 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
+        .environmentObject(NavigationState())
         .modelContainer(for: Checklist.self, inMemory: true)
 }

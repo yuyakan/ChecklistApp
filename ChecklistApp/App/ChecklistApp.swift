@@ -1,10 +1,19 @@
 import SwiftUI
 import SwiftData
 import WidgetKit
+import Combine
+
+// MARK: - Navigation State
+
+@MainActor
+class NavigationState: ObservableObject {
+    @Published var selectedChecklistId: UUID?
+}
 
 @main
 struct ChecklistApp: App {
     @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var navigationState = NavigationState()
     var sharedModelContainer: ModelContainer = AppGroupContainer.modelContainer
 
     init() {
@@ -15,6 +24,7 @@ struct ChecklistApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(navigationState)
                 .onOpenURL { url in
                     handleDeepLink(url: url)
                 }
@@ -38,17 +48,32 @@ struct ChecklistApp: App {
     }
 
     private func handleDeepLink(url: URL) {
-        // URLスキーム: checklistapp://toggle/{itemId}
-        guard url.scheme == "checklistapp",
-              url.host == "toggle",
-              let itemIdString = url.pathComponents.last,
-              let itemId = UUID(uuidString: itemIdString) else {
-            return
-        }
+        guard url.scheme == "checklistapp" else { return }
 
-        Task { @MainActor in
-            let context = ModelContext(sharedModelContainer)
-            toggleItem(itemId: itemId, context: context)
+        switch url.host {
+        case "toggle":
+            // URLスキーム: checklistapp://toggle/{itemId}
+            guard let itemIdString = url.pathComponents.last,
+                  let itemId = UUID(uuidString: itemIdString) else {
+                return
+            }
+            Task { @MainActor in
+                let context = ModelContext(sharedModelContainer)
+                toggleItem(itemId: itemId, context: context)
+            }
+
+        case "checklist":
+            // URLスキーム: checklistapp://checklist/{checklistId}
+            guard let checklistIdString = url.pathComponents.last,
+                  let checklistId = UUID(uuidString: checklistIdString) else {
+                return
+            }
+            Task { @MainActor in
+                navigationState.selectedChecklistId = checklistId
+            }
+
+        default:
+            break
         }
     }
 

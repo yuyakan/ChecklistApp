@@ -10,5 +10,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environmentObject(NavigationState())
         .modelContainer(for: Checklist.self, inMemory: true)
 }
