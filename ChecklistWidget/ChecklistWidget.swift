@@ -9,6 +9,8 @@ import ActivityKit
 enum WidgetAppGroupContainer {
     static let appGroupIdentifier = "group.com.checklistapp.shared"
     private static let currentIndexKey = "widget_current_checklist_index"
+    private static let liveActivityUpdateKey = "live_activity_update_checklist_id"
+    private static let liveActivityUpdateTimestampKey = "live_activity_update_timestamp"
 
     static var containerURL: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
@@ -21,6 +23,24 @@ enum WidgetAppGroupContainer {
     static var currentIndex: Int {
         get { userDefaults?.integer(forKey: currentIndexKey) ?? 0 }
         set { userDefaults?.set(newValue, forKey: currentIndexKey) }
+    }
+
+    static func requestLiveActivityUpdate(checklistId: UUID) {
+        userDefaults?.set(checklistId.uuidString, forKey: liveActivityUpdateKey)
+        userDefaults?.set(Date().timeIntervalSince1970, forKey: liveActivityUpdateTimestampKey)
+    }
+
+    static func getPendingLiveActivityUpdate() -> UUID? {
+        guard let idString = userDefaults?.string(forKey: liveActivityUpdateKey),
+              let uuid = UUID(uuidString: idString) else {
+            return nil
+        }
+        return uuid
+    }
+
+    static func clearPendingLiveActivityUpdate() {
+        userDefaults?.removeObject(forKey: liveActivityUpdateKey)
+        userDefaults?.removeObject(forKey: liveActivityUpdateTimestampKey)
     }
 
     static var modelContainer: ModelContainer? {
@@ -110,7 +130,8 @@ struct ToggleItemIntent: AppIntent {
         }
 
         let context = ModelContext(container)
-        guard let itemUUID = UUID(uuidString: itemId) else {
+        guard let itemUUID = UUID(uuidString: itemId),
+              let checklistUUID = UUID(uuidString: checklistId) else {
             return .result()
         }
 
@@ -127,7 +148,27 @@ struct ToggleItemIntent: AppIntent {
             print("Toggle error: \(error)")
         }
 
+        // Live Activity更新をリクエスト
+        WidgetAppGroupContainer.requestLiveActivityUpdate(checklistId: checklistUUID)
+
+        // Darwin Notificationを送信してメインアプリに通知
+        Self.postDarwinNotification()
+
+        // ウィジェットを更新
+        WidgetCenter.shared.reloadAllTimelines()
+
         return .result()
+    }
+
+    private static func postDarwinNotification() {
+        let notificationCenter = CFNotificationCenterGetDarwinNotifyCenter()
+        CFNotificationCenterPostNotification(
+            notificationCenter,
+            CFNotificationName("com.checklistapp.liveactivity.update" as CFString),
+            nil,
+            nil,
+            true
+        )
     }
 }
 
@@ -211,6 +252,12 @@ struct ChecklistTimelineProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ChecklistEntry) -> Void) {
+        // プレビュー時は即座にプレースホルダーを返す
+        if context.isPreview {
+            completion(placeholder(in: context))
+            return
+        }
+
         let checklists = fetchIncompleteChecklists()
         if let first = checklists.first {
             let entry = ChecklistEntry(
@@ -735,11 +782,20 @@ struct ChecklistLiveActivity: Widget {
                 .activityBackgroundTint(.black.opacity(0.8))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
+            // Dynamic Islandは使用しない（最小限の表示のみ）
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { EmptyView() }
-                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
-                DynamicIslandExpandedRegion(.center) { EmptyView() }
-                DynamicIslandExpandedRegion(.bottom) { EmptyView() }
+                DynamicIslandExpandedRegion(.leading) {
+                    EmptyView()
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    EmptyView()
+                }
+                DynamicIslandExpandedRegion(.center) {
+                    EmptyView()
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    EmptyView()
+                }
             } compactLeading: {
                 EmptyView()
             } compactTrailing: {
@@ -755,74 +811,80 @@ struct ChecklistLiveActivity: Widget {
 
 struct LiveActivityBannerView: View {
     let context: ActivityViewContext<ChecklistActivityAttributes>
+    private let maxDisplayItems = 8
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .top, spacing: 10) {
             // 進捗円グラフ
             ZStack {
                 Circle()
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 5)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 4)
 
                 Circle()
                     .trim(from: 0, to: context.state.progress)
                     .stroke(
                         liveActivityProgressColor(for: context.state.progress),
-                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
 
                 VStack(spacing: 0) {
                     Text("\(Int(context.state.progress * 100))")
-                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                        .font(.system(.caption, design: .rounded, weight: .bold))
                     Text("%")
-                        .font(.caption2)
+                        .font(.system(size: 8))
                         .foregroundStyle(.secondary)
                 }
             }
-            .frame(width: 50, height: 50)
+            .frame(width: 40, height: 40)
 
             // 情報とアイテムリスト
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     Image(systemName: context.attributes.categoryIcon)
-                        .font(.caption2)
+                        .font(.system(size: 10))
                         .foregroundStyle(.secondary)
 
                     Text(context.attributes.title)
-                        .font(.subheadline)
+                        .font(.caption)
                         .fontWeight(.semibold)
                         .lineLimit(1)
 
                     Spacer()
 
                     Text("\(context.state.completedCount)/\(context.state.totalCount)")
-                        .font(.caption)
+                        .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                 }
 
-                // アイテムリスト
-                ForEach(context.state.items.prefix(4)) { item in
-                    HStack(spacing: 6) {
-                        Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                            .font(.caption2)
-                            .foregroundStyle(item.isCompleted ? .green : .secondary)
-                        Text(item.name)
-                            .font(.caption)
-                            .strikethrough(item.isCompleted)
-                            .foregroundStyle(item.isCompleted ? .secondary : .primary)
-                            .lineLimit(1)
-                        Spacer()
+                // アイテムリスト（タップでアプリを開いてチェック切り替え）
+                // Link経由でURLスキームを使用することでローディング問題を回避
+                ForEach(context.state.items.prefix(maxDisplayItems)) { item in
+                    Link(destination: URL(string: "checklistapp://toggle/\(item.id)")!) {
+                        HStack(spacing: 4) {
+                            Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 10))
+                                .foregroundStyle(item.isCompleted ? .green : .secondary)
+                            Text(item.name)
+                                .font(.system(size: 11))
+                                .strikethrough(item.isCompleted)
+                                .foregroundStyle(item.isCompleted ? .secondary : .primary)
+                                .lineLimit(1)
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
                     }
                 }
 
-                if context.state.totalCount > 4 {
-                    Text("他 \(context.state.totalCount - 4) 件...")
-                        .font(.caption2)
+                if context.state.totalCount > maxDisplayItems {
+                    Text("他 \(context.state.totalCount - maxDisplayItems) 件...")
+                        .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                 }
             }
         }
-        .padding()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
     }
 }
 

@@ -1,12 +1,21 @@
 import ActivityKit
 import Foundation
+import SwiftData
 
 @MainActor
 class LiveActivityService {
     static let shared = LiveActivityService()
 
     private var currentActivity: Activity<ChecklistActivityAttributes>?
-    private let maxDisplayItems = 5
+    private let maxDisplayItems = 8
+
+    private static let appGroupIdentifier = "group.com.checklistapp.shared"
+    private static let liveActivityUpdateKey = "live_activity_update_checklist_id"
+    private static let liveActivityUpdateTimestampKey = "live_activity_update_timestamp"
+
+    private var userDefaults: UserDefaults? {
+        UserDefaults(suiteName: Self.appGroupIdentifier)
+    }
 
     private init() {}
 
@@ -45,17 +54,29 @@ class LiveActivityService {
 
     /// Live Activityを更新
     func updateActivity(for checklist: Checklist, lastCompletedItem: String? = nil) {
-        guard let activity = currentActivity,
-              activity.attributes.checklistId == checklist.id.uuidString else {
-            return
+        let checklistId = checklist.id.uuidString
+
+        // アクティビティを検索
+        var targetActivity: Activity<ChecklistActivityAttributes>?
+
+        if let activity = currentActivity,
+           activity.attributes.checklistId == checklistId {
+            targetActivity = activity
+        } else {
+            for activity in Activity<ChecklistActivityAttributes>.activities {
+                if activity.attributes.checklistId == checklistId {
+                    targetActivity = activity
+                    currentActivity = activity
+                    break
+                }
+            }
         }
 
-        let state = createContentState(for: checklist)
+        guard let activity = targetActivity else { return }
 
-        Task {
-            await activity.update(
-                ActivityContent(state: state, staleDate: nil)
-            )
+        let state = createContentState(for: checklist)
+        Task { @MainActor in
+            await activity.update(ActivityContent(state: state, staleDate: nil))
         }
     }
 
@@ -71,29 +92,58 @@ class LiveActivityService {
 
     /// 特定のチェックリストのLive Activityを終了
     func endActivity(for checklistId: UUID) {
-        guard let activity = currentActivity,
-              activity.attributes.checklistId == checklistId.uuidString else {
+        let checklistIdString = checklistId.uuidString
+
+        // currentActivityを確認
+        if let activity = currentActivity,
+           activity.attributes.checklistId == checklistIdString {
+            Task {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            currentActivity = nil
             return
         }
 
-        endCurrentActivity()
+        // すべてのアクティビティから検索
+        for activity in Activity<ChecklistActivityAttributes>.activities {
+            if activity.attributes.checklistId == checklistIdString {
+                Task {
+                    await activity.end(nil, dismissalPolicy: .immediate)
+                }
+                return
+            }
+        }
     }
 
     /// 完了時にLive Activityを終了（完了メッセージ付き）
     func completeActivity(for checklist: Checklist) {
-        guard let activity = currentActivity,
-              activity.attributes.checklistId == checklist.id.uuidString else {
+        let finalState = createContentState(for: checklist)
+        let checklistIdString = checklist.id.uuidString
+
+        // currentActivityを確認
+        if let activity = currentActivity,
+           activity.attributes.checklistId == checklistIdString {
+            Task {
+                await activity.end(
+                    ActivityContent(state: finalState, staleDate: nil),
+                    dismissalPolicy: .default
+                )
+            }
+            currentActivity = nil
             return
         }
 
-        let finalState = createContentState(for: checklist)
-
-        Task {
-            await activity.end(
-                ActivityContent(state: finalState, staleDate: nil),
-                dismissalPolicy: .default
-            )
-            currentActivity = nil
+        // すべてのアクティビティから検索
+        for activity in Activity<ChecklistActivityAttributes>.activities {
+            if activity.attributes.checklistId == checklistIdString {
+                Task {
+                    await activity.end(
+                        ActivityContent(state: finalState, staleDate: nil),
+                        dismissalPolicy: .default
+                    )
+                }
+                return
+            }
         }
     }
 
@@ -103,9 +153,68 @@ class LiveActivityService {
         return UUID(uuidString: activity.attributes.checklistId)
     }
 
+    /// 特定のチェックリストのLive Activityがアクティブかどうか
+    func isActivityActive(for checklistId: UUID) -> Bool {
+        let checklistIdString = checklistId.uuidString
+
+        // currentActivityを確認
+        if let activity = currentActivity,
+           activity.attributes.checklistId == checklistIdString {
+            return true
+        }
+
+        // すべてのアクティビティから検索
+        for activity in Activity<ChecklistActivityAttributes>.activities {
+            if activity.attributes.checklistId == checklistIdString {
+                currentActivity = activity
+                return true
+            }
+        }
+
+        return false
+    }
+
     /// Live Activityが有効かどうか
     var isEnabled: Bool {
         ActivityAuthorizationInfo().areActivitiesEnabled
+    }
+
+    /// ペンディングのLive Activity更新をチェックして処理
+    func checkPendingUpdates(with modelContext: ModelContext) {
+        guard let idString = userDefaults?.string(forKey: Self.liveActivityUpdateKey),
+              let checklistId = UUID(uuidString: idString) else {
+            // ペンディングがなくても、アクティブなLive Activityを同期
+            syncAllActiveActivities(with: modelContext)
+            return
+        }
+
+        // ペンディングをクリア
+        userDefaults?.removeObject(forKey: Self.liveActivityUpdateKey)
+        userDefaults?.removeObject(forKey: Self.liveActivityUpdateTimestampKey)
+
+        // チェックリストを取得して更新
+        let descriptor = FetchDescriptor<Checklist>()
+        guard let checklists = try? modelContext.fetch(descriptor),
+              let checklist = checklists.first(where: { $0.id == checklistId }) else {
+            return
+        }
+
+        updateActivity(for: checklist)
+    }
+
+    /// 全てのアクティブなLive Activityを同期
+    func syncAllActiveActivities(with modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<Checklist>()
+        guard let checklists = try? modelContext.fetch(descriptor) else { return }
+
+        for activity in Activity<ChecklistActivityAttributes>.activities {
+            if let checklist = checklists.first(where: { $0.id.uuidString == activity.attributes.checklistId }) {
+                let state = createContentState(for: checklist)
+                Task {
+                    await activity.update(ActivityContent(state: state, staleDate: nil))
+                }
+            }
+        }
     }
 
     // MARK: - Private Methods

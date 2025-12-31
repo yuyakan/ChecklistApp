@@ -62,12 +62,20 @@
 			);
 			target = 4BC02EB72F00E7A6006D7EF3 /* ChecklistWidgetExtension */;
 		};
+		4BC02FC62F050965006D7EF3 /* Exceptions for "ChecklistApp" folder in "ChecklistApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4BC02E5F2F00E742006D7EF3 /* ChecklistApp */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4BC02E982F00E76C006D7EF3 /* ChecklistApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				4BC02FC62F050965006D7EF3 /* Exceptions for "ChecklistApp" folder in "ChecklistApp" target */,
 				4BC02FB02F03B272006D7EF3 /* Exceptions for "ChecklistApp" folder in "ChecklistWidgetExtension" target */,
 			);
 			path = ChecklistApp;
@@ -395,6 +403,7 @@
 				DEVELOPMENT_TEAM = 2NGCBTHK5K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChecklistApp/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "写真からチェックリストを作成するためにカメラを使用します";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声からチェックリストを作成するためにマイクを使用します";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "写真からチェックリストを作成するためにフォトライブラリにアクセスします";
@@ -433,6 +442,7 @@
 				DEVELOPMENT_TEAM = 2NGCBTHK5K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChecklistApp/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "写真からチェックリストを作成するためにカメラを使用します";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声からチェックリストを作成するためにマイクを使用します";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "写真からチェックリストを作成するためにフォトライブラリにアクセスします";

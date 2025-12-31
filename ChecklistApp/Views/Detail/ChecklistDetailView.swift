@@ -45,6 +45,27 @@ struct ChecklistDetailView: View {
                     }
                 }
                 .padding(.vertical, 4)
+
+                // Live Activity トグル
+                Button {
+                    viewModel.toggleLiveActivity()
+                } label: {
+                    HStack {
+                        Image(systemName: viewModel.isLiveActivityActive ? "bell.badge.fill" : "bell")
+                            .foregroundStyle(viewModel.isLiveActivityActive ? .green : .secondary)
+                        Text("ロック画面に表示")
+                        Spacer()
+                        if viewModel.isLiveActivityActive {
+                            Text("オン")
+                                .font(.subheadline)
+                                .foregroundStyle(.green)
+                        } else {
+                            Text("オフ")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
 
             // チェックリスト項目
@@ -144,6 +165,9 @@ struct ChecklistDetailView: View {
         }
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(text: viewModel.shareText())
+        }
+        .onAppear {
+            viewModel.refreshLiveActivityState()
         }
     }
 

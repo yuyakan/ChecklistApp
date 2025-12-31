@@ -13,19 +13,48 @@ class ChecklistDetailViewModel: ObservableObject {
     @Published var showingShareSheet = false
     @Published var selectedPriority: Priority = .medium
     @Published var itemNote = ""
+    @Published var isLiveActivityActive = false
 
     let checklist: Checklist
 
     init(checklist: Checklist) {
         self.checklist = checklist
         self.editingTitle = checklist.title
+        self.isLiveActivityActive = LiveActivityService.shared.isActivityActive(for: checklist.id)
+    }
+
+    /// Live Activityの状態を更新
+    func refreshLiveActivityState() {
+        isLiveActivityActive = LiveActivityService.shared.isActivityActive(for: checklist.id)
+    }
+
+    /// Live Activityの表示を切り替え
+    func toggleLiveActivity() {
+        if isLiveActivityActive {
+            LiveActivityService.shared.endActivity(for: checklist.id)
+            isLiveActivityActive = false
+        } else {
+            LiveActivityService.shared.startActivity(for: checklist)
+            isLiveActivityActive = true
+        }
     }
 
     func toggleItem(_ item: ChecklistItemModel) {
         item.isCompleted.toggle()
         checklist.updatedAt = Date()
         reloadWidget()
-        updateLiveActivity(completedItem: item.isCompleted ? item.name : nil)
+
+        // Live Activityがアクティブなら更新
+        if isLiveActivityActive {
+            if checklist.isCompleted {
+                // チェックリスト完了時はLive Activityを終了
+                LiveActivityService.shared.completeActivity(for: checklist)
+                isLiveActivityActive = false
+            } else {
+                // 通常の更新
+                LiveActivityService.shared.updateActivity(for: checklist)
+            }
+        }
     }
 
     func addItem() {
@@ -42,7 +71,11 @@ class ChecklistDetailViewModel: ObservableObject {
         checklist.addItem(item)
         resetNewItemFields()
         reloadWidget()
-        updateLiveActivity(completedItem: nil)
+
+        // Live Activityがアクティブなら更新
+        if isLiveActivityActive {
+            LiveActivityService.shared.updateActivity(for: checklist)
+        }
     }
 
     func deleteItems(at offsets: IndexSet) {
@@ -51,7 +84,11 @@ class ChecklistDetailViewModel: ObservableObject {
             checklist.removeItem(sortedItems[index])
         }
         reloadWidget()
-        updateLiveActivity(completedItem: nil)
+
+        // Live Activityがアクティブなら更新
+        if isLiveActivityActive {
+            LiveActivityService.shared.updateActivity(for: checklist)
+        }
     }
 
     func moveItems(from source: IndexSet, to destination: Int) {
@@ -99,25 +136,5 @@ class ChecklistDetailViewModel: ObservableObject {
 
     private func reloadWidget() {
         WidgetCenter.shared.reloadAllTimelines()
-    }
-
-    private func updateLiveActivity(completedItem: String?) {
-        if checklist.isCompleted {
-            // すべて完了したらLive Activityを終了
-            LiveActivityService.shared.completeActivity(for: checklist)
-        } else {
-            // 進捗を更新
-            LiveActivityService.shared.updateActivity(for: checklist, lastCompletedItem: completedItem)
-        }
-    }
-
-    /// Live Activityを開始
-    func startLiveActivity() {
-        LiveActivityService.shared.startActivity(for: checklist)
-    }
-
-    /// Live Activityを終了
-    func endLiveActivity() {
-        LiveActivityService.shared.endActivity(for: checklist.id)
     }
 }
