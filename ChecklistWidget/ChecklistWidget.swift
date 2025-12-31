@@ -311,8 +311,90 @@ struct ChecklistWidgetEntryView: View {
             MediumWidgetView(entry: entry)
         case .systemLarge:
             LargeWidgetView(entry: entry)
+        case .accessoryCircular:
+            AccessoryCircularView(entry: entry)
+        case .accessoryRectangular:
+            AccessoryRectangularView(entry: entry)
+        case .accessoryInline:
+            AccessoryInlineView(entry: entry)
         default:
             SmallWidgetView(entry: entry)
+        }
+    }
+}
+
+// MARK: - Lock Screen Widgets
+
+struct AccessoryCircularView: View {
+    let entry: ChecklistEntry
+
+    var body: some View {
+        if let checklist = entry.checklist {
+            Gauge(value: checklist.progress) {
+                Image(systemName: "checklist")
+            } currentValueLabel: {
+                Text("\(checklist.completedCount)")
+                    .font(.system(.body, design: .rounded, weight: .bold))
+            }
+            .gaugeStyle(.accessoryCircular)
+        } else {
+            ZStack {
+                AccessoryWidgetBackground()
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title2)
+            }
+        }
+    }
+}
+
+struct AccessoryRectangularView: View {
+    let entry: ChecklistEntry
+
+    var body: some View {
+        if let checklist = entry.checklist {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Image(systemName: checklist.categoryIcon)
+                        .font(.caption2)
+                    Text(checklist.title)
+                        .font(.headline)
+                        .lineLimit(1)
+                }
+
+                Gauge(value: checklist.progress) {
+                    EmptyView()
+                } currentValueLabel: {
+                    EmptyView()
+                }
+                .gaugeStyle(.accessoryLinear)
+
+                Text("\(checklist.completedCount)/\(checklist.totalCount) 完了")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text("すべて完了")
+                        .font(.headline)
+                }
+                Text("未完了のリストはありません")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+struct AccessoryInlineView: View {
+    let entry: ChecklistEntry
+
+    var body: some View {
+        if let checklist = entry.checklist {
+            Label("\(checklist.title): \(checklist.completedCount)/\(checklist.totalCount)", systemImage: checklist.categoryIcon)
+        } else {
+            Label("すべて完了", systemImage: "checkmark.circle.fill")
         }
     }
 }
@@ -632,7 +714,14 @@ struct ChecklistWidget: Widget {
         }
         .configurationDisplayName("チェックリスト")
         .description("未完了のチェックリストの進捗を表示します")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([
+            .systemSmall,
+            .systemMedium,
+            .systemLarge,
+            .accessoryCircular,
+            .accessoryRectangular,
+            .accessoryInline
+        ])
     }
 }
 
