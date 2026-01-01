@@ -164,16 +164,10 @@ struct ChecklistDetailView: View {
                         .foregroundStyle(viewModel.isLiveActivityActive ? Color.statusSuccess : Color.neumorphicTextSecondary)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("ロック画面に表示")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundStyle(Color.neumorphicTextPrimary)
-
-                    Text(viewModel.isLiveActivityActive ? "Live Activityがオンです" : "タップしてオンにする")
-                        .font(.caption)
-                        .foregroundStyle(Color.neumorphicTextTertiary)
-                }
+                Text("ロック画面に表示")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
 
                 Spacer()
 

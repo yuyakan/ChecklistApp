@@ -810,27 +810,28 @@ struct ChecklistLiveActivity: Widget {
                 .activityBackgroundTint(.black.opacity(0.8))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
-            // Dynamic Islandは使用しない（最小限の表示のみ）
+            // Dynamic Islandはコンパクト表示のみ（展開しない）
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    EmptyView()
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    EmptyView()
-                }
-                DynamicIslandExpandedRegion(.center) {
-                    EmptyView()
-                }
-                DynamicIslandExpandedRegion(.bottom) {
-                    EmptyView()
-                }
+                // 展開時の領域は最小限に
+                DynamicIslandExpandedRegion(.leading) { }
+                DynamicIslandExpandedRegion(.trailing) { }
+                DynamicIslandExpandedRegion(.center) { }
+                DynamicIslandExpandedRegion(.bottom) { }
             } compactLeading: {
-                EmptyView()
+                // コンパクト表示: 進捗アイコン
+                Image(systemName: "checklist")
+                    .font(.caption2)
             } compactTrailing: {
-                EmptyView()
+                // コンパクト表示: 進捗
+                Text("\(context.state.completedCount)/\(context.state.totalCount)")
+                    .font(.caption2)
+                    .monospacedDigit()
             } minimal: {
-                EmptyView()
+                // 最小表示: チェックマークアイコン
+                Image(systemName: "checklist")
+                    .font(.caption2)
             }
+            .contentMargins(.all, 0, for: .expanded)
         }
     }
 }
