@@ -68,24 +68,25 @@ struct VoiceInputView: View {
                 }
             } label: {
                 ZStack {
-                    // Outer ring with pulse animation when recording
+                    // Pulse effect when recording (behind other elements)
+                    Circle()
+                        .stroke(Color.statusError.opacity(0.3), lineWidth: 3)
+                        .frame(width: 110, height: 110)
+                        .scaleEffect(viewModel.speechRecognitionService.isRecording ? 1.2 : 1.0)
+                        .opacity(viewModel.speechRecognitionService.isRecording ? 0 : 1)
+                        .animation(
+                            viewModel.speechRecognitionService.isRecording
+                                ? .easeInOut(duration: 1.0).repeatForever(autoreverses: false)
+                                : .default,
+                            value: viewModel.speechRecognitionService.isRecording
+                        )
+                        .opacity(viewModel.speechRecognitionService.isRecording ? 1 : 0)
+
+                    // Outer ring
                     Circle()
                         .fill(Color.neumorphicSurface)
                         .frame(width: 100, height: 100)
                         .neumorphicShadow()
-
-                    // Pulse effect when recording
-                    if viewModel.speechRecognitionService.isRecording {
-                        Circle()
-                            .stroke(Color.statusError.opacity(0.3), lineWidth: 3)
-                            .frame(width: 110, height: 110)
-                            .scaleEffect(viewModel.speechRecognitionService.isRecording ? 1.2 : 1.0)
-                            .opacity(viewModel.speechRecognitionService.isRecording ? 0 : 1)
-                            .animation(
-                                .easeInOut(duration: 1.0).repeatForever(autoreverses: false),
-                                value: viewModel.speechRecognitionService.isRecording
-                            )
-                    }
 
                     // Inner button
                     Circle()
@@ -98,12 +99,14 @@ struct VoiceInputView: View {
                         .font(.title)
                         .foregroundStyle(.white)
                 }
+                .frame(width: 140, height: 140)
             }
             .buttonStyle(.plain)
 
             Text(viewModel.speechRecognitionService.isRecording ? "タップして停止" : "タップして録音開始")
                 .font(.subheadline)
                 .foregroundStyle(Color.neumorphicTextSecondary)
+                .frame(height: 20)
         }
         .padding(.vertical, NeumorphicSpacing.md)
     }
