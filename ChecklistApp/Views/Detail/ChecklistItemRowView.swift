@@ -1,9 +1,10 @@
- import SwiftUI
+import SwiftUI
 
 struct ChecklistItemRowView: View {
     let item: ChecklistItemModel
     let onToggle: () -> Void
     let onUpdate: (String, String?, Priority) -> Void
+    let onDelete: () -> Void
 
     @State private var showingEditSheet = false
     @State private var editingName: String = ""
@@ -11,40 +12,51 @@ struct ChecklistItemRowView: View {
     @State private var editingPriority: Priority = .medium
 
     var body: some View {
-        HStack(spacing: 12) {
-            // チェックボックス
-            Button {
+        HStack(spacing: NeumorphicSpacing.sm) {
+            // Neumorphic Checkbox
+            NeumorphicCheckbox(isChecked: item.isCompleted) {
                 onToggle()
-            } label: {
-                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(item.isCompleted ? .green : .secondary)
             }
-            .buttonStyle(.plain)
 
-            // コンテンツ
-            VStack(alignment: .leading, spacing: 2) {
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
                 Text(item.name)
                     .font(.body)
-                    .strikethrough(item.isCompleted)
-                    .foregroundStyle(item.isCompleted ? .secondary : .primary)
+                    .fontWeight(item.isCompleted ? .regular : .medium)
+                    .strikethrough(item.isCompleted, color: Color.neumorphicTextTertiary)
+                    .foregroundStyle(item.isCompleted ? Color.neumorphicTextTertiary : Color.neumorphicTextPrimary)
 
                 if let note = item.note, !note.isEmpty {
                     Text(note)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.neumorphicTextSecondary)
                 }
             }
 
             Spacer()
 
-            // 優先度バッジ
+            // Priority badge
             priorityBadge
         }
+        .padding(.vertical, NeumorphicSpacing.sm)
         .contentShape(Rectangle())
         .onTapGesture {
             prepareEditValues()
             showingEditSheet = true
+        }
+        .contextMenu {
+            Button {
+                prepareEditValues()
+                showingEditSheet = true
+            } label: {
+                Label("編集", systemImage: "pencil")
+            }
+
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("削除", systemImage: "trash")
+            }
         }
         .sheet(isPresented: $showingEditSheet) {
             editSheet
@@ -59,8 +71,15 @@ struct ChecklistItemRowView: View {
 
             Text(item.priority.description)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .fontWeight(.medium)
         }
+        .foregroundStyle(priorityColor)
+        .padding(.horizontal, NeumorphicSpacing.sm)
+        .padding(.vertical, NeumorphicSpacing.xxs)
+        .background(
+            Capsule()
+                .fill(priorityColor.opacity(0.12))
+        )
     }
 
     private var priorityColor: Color {
@@ -69,34 +88,110 @@ struct ChecklistItemRowView: View {
 
     private var editSheet: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("項目名", text: $editingName)
-                    TextField("メモ（任意）", text: $editingNote)
-                }
+            ZStack {
+                Color.neumorphicBackground.ignoresSafeArea()
 
-                Section("優先度") {
-                    Picker("優先度", selection: $editingPriority) {
-                        ForEach(Priority.allCases, id: \.self) { priority in
-                            HStack {
-                                Circle()
-                                    .fill(Color.priority(priority))
-                                    .frame(width: 10, height: 10)
-                                Text(priority.description)
+                VStack(spacing: NeumorphicSpacing.lg) {
+                    // Item name field
+                    VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                        Text("項目名")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.neumorphicTextSecondary)
+
+                        NeumorphicTextField(
+                            placeholder: "項目を入力...",
+                            text: $editingName,
+                            icon: "checklist"
+                        )
+                    }
+
+                    // Note field
+                    VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                        Text("メモ（任意）")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.neumorphicTextSecondary)
+
+                        NeumorphicTextField(
+                            placeholder: "メモを入力...",
+                            text: $editingNote,
+                            icon: "note.text"
+                        )
+                    }
+
+                    // Priority picker
+                    VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                        Text("優先度")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.neumorphicTextSecondary)
+
+                        HStack(spacing: NeumorphicSpacing.sm) {
+                            ForEach(Priority.allCases, id: \.self) { priority in
+                                NeumorphicPriorityButton(
+                                    priority: priority,
+                                    isSelected: editingPriority == priority
+                                ) {
+                                    editingPriority = priority
+                                }
                             }
-                            .tag(priority)
                         }
                     }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                }
 
-                Section {
-                    Toggle("完了", isOn: Binding(
-                        get: { item.isCompleted },
-                        set: { _ in onToggle() }
-                    ))
+                    // Completion toggle
+                    Button {
+                        onToggle()
+                    } label: {
+                        HStack(spacing: NeumorphicSpacing.sm) {
+                            ZStack {
+                                Circle()
+                                    .fill(item.isCompleted ? Color.statusSuccess.opacity(0.15) : Color.neumorphicBackground)
+                                    .frame(width: 44, height: 44)
+
+                                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                                    .font(.title2)
+                                    .foregroundStyle(item.isCompleted ? Color.statusSuccess : Color.neumorphicTextSecondary)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("完了状態")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(Color.neumorphicTextPrimary)
+
+                                Text(item.isCompleted ? "完了済み" : "未完了")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.neumorphicTextTertiary)
+                            }
+
+                            Spacer()
+                        }
+                        .padding(NeumorphicSpacing.md)
+                        .background(Color.neumorphicSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
+                    }
+                    .buttonStyle(.plain)
+                    .neumorphicShadow(subtle: true)
+
+                    Spacer()
+
+                    // Save button
+                    NeumorphicButton_Unified(
+                        title: "保存",
+                        style: .accent,
+                        isEnabled: !editingName.isEmpty
+                    ) {
+                        onUpdate(
+                            editingName,
+                            editingNote.isEmpty ? nil : editingNote,
+                            editingPriority
+                        )
+                        showingEditSheet = false
+                    }
+                    .padding(.bottom, NeumorphicSpacing.md)
                 }
+                .padding(NeumorphicSpacing.lg)
             }
             .navigationTitle("項目を編集")
             .navigationBarTitleDisplayMode(.inline)
@@ -105,22 +200,11 @@ struct ChecklistItemRowView: View {
                     Button("キャンセル") {
                         showingEditSheet = false
                     }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        onUpdate(
-                            editingName,
-                            editingNote.isEmpty ? nil : editingNote,
-                            editingPriority
-                        )
-                        showingEditSheet = false
-                    }
-                    .disabled(editingName.isEmpty)
+                    .foregroundStyle(Color.neumorphicTextSecondary)
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
     }
 
     private func prepareEditValues() {
@@ -131,17 +215,44 @@ struct ChecklistItemRowView: View {
 }
 
 #Preview {
-    List {
-        ChecklistItemRowView(
-            item: ChecklistItemModel(name: "牛乳を買う", note: "低脂肪のもの", isCompleted: false, priority: .high, order: 0),
-            onToggle: {},
-            onUpdate: { _, _, _ in }
-        )
+    ZStack {
+        Color.neumorphicBackground.ignoresSafeArea()
 
-        ChecklistItemRowView(
-            item: ChecklistItemModel(name: "完了した項目", isCompleted: true, priority: .low, order: 1),
-            onToggle: {},
-            onUpdate: { _, _, _ in }
-        )
+        VStack(spacing: 0) {
+            ChecklistItemRowView(
+                item: ChecklistItemModel(name: "牛乳を買う", note: "低脂肪のもの", isCompleted: false, priority: .high, order: 0),
+                onToggle: {},
+                onUpdate: { _, _, _ in },
+                onDelete: {}
+            )
+            .padding(.horizontal, NeumorphicSpacing.md)
+
+            Divider()
+                .padding(.horizontal, NeumorphicSpacing.lg)
+
+            ChecklistItemRowView(
+                item: ChecklistItemModel(name: "完了した項目", isCompleted: true, priority: .low, order: 1),
+                onToggle: {},
+                onUpdate: { _, _, _ in },
+                onDelete: {}
+            )
+            .padding(.horizontal, NeumorphicSpacing.md)
+
+            Divider()
+                .padding(.horizontal, NeumorphicSpacing.lg)
+
+            ChecklistItemRowView(
+                item: ChecklistItemModel(name: "中程度の優先度", isCompleted: false, priority: .medium, order: 2),
+                onToggle: {},
+                onUpdate: { _, _, _ in },
+                onDelete: {}
+            )
+            .padding(.horizontal, NeumorphicSpacing.md)
+        }
+        .padding(.vertical, NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+        .padding()
     }
 }

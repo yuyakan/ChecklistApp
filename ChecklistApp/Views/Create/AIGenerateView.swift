@@ -1,4 +1,4 @@
- import SwiftUI
+import SwiftUI
 
 struct AIGenerateView: View {
     @ObservedObject var viewModel: CreateChecklistViewModel
@@ -14,117 +14,31 @@ struct AIGenerateView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 20) {
-            // 説明
-            VStack(spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.largeTitle)
-                    .foregroundStyle(.purple)
+        VStack(spacing: NeumorphicSpacing.lg) {
+            // Header card
+            headerCard
 
-                Text("AIでチェックリストを生成")
-                    .font(.headline)
+            // Input card
+            inputCard
 
-                Text("やりたいことを入力するだけで\nAIが最適なリストを作成します")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding()
+            // Suggestions
+            suggestionsSection
 
-            // 条件入力フィールド
-            VStack(alignment: .leading, spacing: 8) {
-                Text("何のリストを作成しますか？")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                TextField("例: カレーの材料、引っ越しの手続き...", text: $viewModel.conditionText)
-                    .focused($isTextFieldFocused)
-                    .textFieldStyle(.roundedBorder)
-                    .submitLabel(.go)
-                    .onSubmit {
-                        generateChecklist()
-                    }
-            }
-
-            // 提案ボタン
-            VStack(alignment: .leading, spacing: 8) {
-                Text("よく使われる例")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 8) {
-                    ForEach(suggestions, id: \.self) { suggestion in
-                        Button {
-                            viewModel.conditionText = suggestion
-                        } label: {
-                            Text(suggestion)
-                                .font(.caption)
-                                .lineLimit(1)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .frame(maxWidth: .infinity)
-                                .background(Color(.systemGray6))
-                                .clipShape(Capsule())
-                        }
-                        .foregroundStyle(.primary)
-                    }
-                }
-            }
-
-            // AI機能利用可否の確認
+            // AI availability check
             if !viewModel.aiService.isAvailable {
-                VStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.title)
-                        .foregroundStyle(.orange)
-
-                    Text("AI機能は現在利用できません")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    Text("このデバイスではFoundation Modelsが\nサポートされていません")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                aiUnavailableCard
             }
 
-            // 生成ボタン
-            Button {
-                generateChecklist()
-            } label: {
-                Label("リストを生成", systemImage: "sparkles")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.purple)
-            .disabled(viewModel.conditionText.isEmpty || viewModel.isProcessing || !viewModel.aiService.isAvailable)
+            // Generate button
+            NeumorphicAccentButton(
+                title: "リストを生成",
+                icon: "sparkles",
+                action: generateChecklist,
+                isDisabled: viewModel.conditionText.isEmpty || viewModel.isProcessing || !viewModel.aiService.isAvailable
+            )
 
-            // ヒント
-            VStack(alignment: .leading, spacing: 4) {
-                Label("ヒント", systemImage: "lightbulb")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-
-                Text("具体的な条件を入力すると、より適切なリストが生成されます。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Text("例: 「2泊3日の北海道旅行の持ち物」「4人家族のBBQで必要なもの」")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .padding()
-            .background(Color.orange.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-
-            Spacer()
+            // Hint card
+            hintCard
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -132,8 +46,112 @@ struct AIGenerateView: View {
                 Button("完了") {
                     isTextFieldFocused = false
                 }
+                .foregroundStyle(Color.accentOrangeStart)
             }
         }
+    }
+
+    private var headerCard: some View {
+        HStack(spacing: NeumorphicSpacing.sm) {
+            Image(systemName: "sparkles")
+                .font(.title3)
+                .foregroundStyle(Color.accentOrangeStart)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("AIで生成")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
+
+                Text("やりたいことを入力するだけで最適なリストを作成")
+                    .font(.caption)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, NeumorphicSpacing.xs)
+    }
+
+    private var inputCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
+            Text("何のリストを作成しますか？")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(Color.neumorphicTextSecondary)
+
+            NeumorphicTextField(
+                placeholder: "例: カレーの材料、引っ越しの手続き...",
+                text: $viewModel.conditionText,
+                icon: "sparkles"
+            )
+            .focused($isTextFieldFocused)
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    private var suggestionsSection: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+            Text("よく使われる例")
+                .font(.caption)
+                .foregroundStyle(Color.neumorphicTextTertiary)
+
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: NeumorphicSpacing.xs) {
+                ForEach(suggestions, id: \.self) { suggestion in
+                    SuggestionChipButton(title: suggestion) {
+                        viewModel.conditionText = suggestion
+                    }
+                }
+            }
+        }
+    }
+
+    private var aiUnavailableCard: some View {
+        VStack(spacing: NeumorphicSpacing.sm) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.title)
+                .foregroundStyle(Color.statusWarning)
+
+            Text("AI機能は現在利用できません")
+                .font(.subheadline)
+                .foregroundStyle(Color.neumorphicTextSecondary)
+
+            Text("このデバイスではFoundation Modelsが\nサポートされていません")
+                .font(.caption)
+                .foregroundStyle(Color.neumorphicTextTertiary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(NeumorphicSpacing.md)
+        .frame(maxWidth: .infinity)
+        .background(Color.statusWarning.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
+    }
+
+    private var hintCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+            Label("ヒント", systemImage: "lightbulb.fill")
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundStyle(Color.accentOrangeStart)
+
+            Text("具体的な条件を入力すると、より適切なリストが生成されます。")
+                .font(.caption)
+                .foregroundStyle(Color.neumorphicTextSecondary)
+
+            Text("例: 「2泊3日の北海道旅行の持ち物」「4人家族のBBQで必要なもの」")
+                .font(.caption)
+                .foregroundStyle(Color.neumorphicTextTertiary)
+        }
+        .padding(NeumorphicSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.accentOrangeStart.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
     }
 
     private func generateChecklist() {
@@ -144,6 +162,34 @@ struct AIGenerateView: View {
     }
 }
 
+struct SuggestionChipButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption)
+                .fontWeight(.medium)
+                .lineLimit(1)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+                .padding(.horizontal, NeumorphicSpacing.sm)
+                .padding(.vertical, NeumorphicSpacing.xs)
+                .frame(maxWidth: .infinity)
+                .background(Color.neumorphicSurface)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .neumorphicShadow(subtle: true)
+    }
+}
+
 #Preview {
-    AIGenerateView(viewModel: CreateChecklistViewModel())
+    ZStack {
+        Color.neumorphicBackground.ignoresSafeArea()
+        ScrollView {
+            AIGenerateView(viewModel: CreateChecklistViewModel())
+                .padding()
+        }
+    }
 }

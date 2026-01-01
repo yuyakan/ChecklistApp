@@ -4,104 +4,188 @@ struct VoiceInputView: View {
     @ObservedObject var viewModel: CreateChecklistViewModel
 
     var body: some View {
-        VStack(spacing: 20) {
-            // 説明
-            VStack(spacing: 8) {
-                Image(systemName: "waveform")
-                    .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+        VStack(spacing: NeumorphicSpacing.lg) {
+            // Header card
+            headerCard
 
-                Text("音声からチェックリストを作成")
-                    .font(.headline)
+            // Recording button
+            recordingButton
 
-                Text("話した内容をリアルタイムで\nテキストに変換します")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding()
+            // Transcribed text card
+            transcribedTextCard
 
-            // 録音ボタン
-            VStack(spacing: 20) {
-                Button {
-                    if viewModel.speechRecognitionService.isRecording {
-                        viewModel.speechRecognitionService.stopRecording()
-                    } else {
-                        viewModel.speechRecognitionService.startRecording()
-                    }
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(viewModel.speechRecognitionService.isRecording ? Color.red : Color.accentColor)
-                            .frame(width: 80, height: 80)
-
-                        Image(systemName: viewModel.speechRecognitionService.isRecording ? "stop.fill" : "mic.fill")
-                            .font(.title)
-                            .foregroundStyle(.white)
-                    }
-                }
-
-                Text(viewModel.speechRecognitionService.isRecording ? "タップして停止" : "タップして録音開始")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            // 認識されたテキスト
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("認識されたテキスト")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    if !viewModel.speechRecognitionService.transcribedText.isEmpty {
-                        Button("クリア") {
-                            viewModel.speechRecognitionService.transcribedText = ""
-                        }
-                        .font(.caption)
-                    }
-                }
-
-                Text(viewModel.speechRecognitionService.transcribedText.isEmpty
-                    ? "音声を認識すると、ここに表示されます"
-                    : viewModel.speechRecognitionService.transcribedText)
-                    .font(.body)
-                    .foregroundStyle(viewModel.speechRecognitionService.transcribedText.isEmpty ? .tertiary : .primary)
-                    .padding()
-                    .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-
-            // 変換ボタン
+            // Convert button
             if !viewModel.speechRecognitionService.transcribedText.isEmpty
                 && !viewModel.speechRecognitionService.isRecording {
-                Button {
-                    Task {
-                        await viewModel.processVoiceInput()
-                    }
-                } label: {
-                    Label("チェックリストに変換", systemImage: "sparkles")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(viewModel.isProcessing)
+                NeumorphicAccentButton(
+                    title: "チェックリストに変換",
+                    icon: "sparkles",
+                    action: {
+                        Task {
+                            await viewModel.processVoiceInput()
+                        }
+                    },
+                    isDisabled: viewModel.isProcessing
+                )
             }
 
-            // エラー表示
+            // Error display
             if let error = viewModel.speechRecognitionService.errorMessage {
-                Text(error)
+                errorCard(message: error)
+            }
+        }
+    }
+
+    private var headerCard: some View {
+        HStack(spacing: NeumorphicSpacing.sm) {
+            Image(systemName: "waveform")
+                .font(.title3)
+                .foregroundStyle(Color.accentOrangeStart)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("音声から作成")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
+
+                Text("話した内容をリアルタイムでテキストに変換")
                     .font(.caption)
-                    .foregroundStyle(.red)
-                    .padding()
+                    .foregroundStyle(Color.neumorphicTextTertiary)
             }
 
             Spacer()
         }
+        .padding(.vertical, NeumorphicSpacing.xs)
+    }
+
+    private var recordingButton: some View {
+        VStack(spacing: NeumorphicSpacing.md) {
+            Button {
+                if viewModel.speechRecognitionService.isRecording {
+                    viewModel.speechRecognitionService.stopRecording()
+                } else {
+                    viewModel.speechRecognitionService.startRecording()
+                }
+            } label: {
+                ZStack {
+                    // Outer ring with pulse animation when recording
+                    Circle()
+                        .fill(Color.neumorphicSurface)
+                        .frame(width: 100, height: 100)
+                        .neumorphicShadow()
+
+                    // Pulse effect when recording
+                    if viewModel.speechRecognitionService.isRecording {
+                        Circle()
+                            .stroke(Color.statusError.opacity(0.3), lineWidth: 3)
+                            .frame(width: 110, height: 110)
+                            .scaleEffect(viewModel.speechRecognitionService.isRecording ? 1.2 : 1.0)
+                            .opacity(viewModel.speechRecognitionService.isRecording ? 0 : 1)
+                            .animation(
+                                .easeInOut(duration: 1.0).repeatForever(autoreverses: false),
+                                value: viewModel.speechRecognitionService.isRecording
+                            )
+                    }
+
+                    // Inner button
+                    Circle()
+                        .fill(viewModel.speechRecognitionService.isRecording
+                            ? AnyShapeStyle(Color.statusError)
+                            : AnyShapeStyle(Color.orangeGradient))
+                        .frame(width: 70, height: 70)
+
+                    Image(systemName: viewModel.speechRecognitionService.isRecording ? "stop.fill" : "mic.fill")
+                        .font(.title)
+                        .foregroundStyle(.white)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Text(viewModel.speechRecognitionService.isRecording ? "タップして停止" : "タップして録音開始")
+                .font(.subheadline)
+                .foregroundStyle(Color.neumorphicTextSecondary)
+        }
+        .padding(.vertical, NeumorphicSpacing.md)
+    }
+
+    private var transcribedTextCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
+            HStack {
+                Text("認識されたテキスト")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.neumorphicTextSecondary)
+
+                Spacer()
+
+                if !viewModel.speechRecognitionService.transcribedText.isEmpty {
+                    Button {
+                        viewModel.speechRecognitionService.transcribedText = ""
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "xmark.circle.fill")
+                            Text("クリア")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(Color.neumorphicTextTertiary)
+                    }
+                }
+            }
+
+            Text(viewModel.speechRecognitionService.transcribedText.isEmpty
+                ? "音声を認識すると、ここに表示されます"
+                : viewModel.speechRecognitionService.transcribedText)
+                .font(.body)
+                .foregroundStyle(
+                    viewModel.speechRecognitionService.transcribedText.isEmpty
+                        ? Color.neumorphicTextTertiary
+                        : Color.neumorphicTextPrimary
+                )
+                .padding(NeumorphicSpacing.md)
+                .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
+                .background(Color.neumorphicBackground)
+                .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
+                .shadow(
+                    color: Color.neumorphicDarkShadow,
+                    radius: 2,
+                    x: 1,
+                    y: 1
+                )
+                .shadow(
+                    color: Color.neumorphicLightShadow,
+                    radius: 2,
+                    x: -1,
+                    y: -1
+                )
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    private func errorCard(message: String) -> some View {
+        HStack(spacing: NeumorphicSpacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(Color.statusError)
+
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(Color.statusError)
+        }
+        .padding(NeumorphicSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.statusError.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
     }
 }
 
 #Preview {
-    VoiceInputView(viewModel: CreateChecklistViewModel())
+    ZStack {
+        Color.neumorphicBackground.ignoresSafeArea()
+        ScrollView {
+            VoiceInputView(viewModel: CreateChecklistViewModel())
+                .padding()
+        }
+    }
 }

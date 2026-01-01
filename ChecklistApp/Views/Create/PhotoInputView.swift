@@ -4,85 +4,18 @@ import UIKit
 
 struct PhotoInputView: View {
     @ObservedObject var viewModel: CreateChecklistViewModel
-    @State private var showingSourcePicker = false
 
     var body: some View {
-        VStack(spacing: 20) {
-            // 説明
-            VStack(spacing: 8) {
-                Image(systemName: "camera.viewfinder")
-                    .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+        VStack(spacing: NeumorphicSpacing.lg) {
+            // Header card
+            headerCard
 
-                Text("写真からチェックリストを作成")
-                    .font(.headline)
+            // Image selection/display card
+            imageCard
 
-                Text("レシピ、買い物メモ、手書きリストなどの\n写真からテキストを読み取ります")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding()
-
-            // 選択した画像の表示
-            if let image = viewModel.selectedImage {
-                VStack(spacing: 12) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(radius: 2)
-
-                    Button("画像を変更") {
-                        showingSourcePicker = true
-                    }
-                    .font(.subheadline)
-                }
-            } else {
-                // 画像選択ボタン
-                Button {
-                    showingSourcePicker = true
-                } label: {
-                    VStack(spacing: 12) {
-                        Image(systemName: "photo.on.rectangle.angled")
-                            .font(.system(size: 40))
-
-                        Text("写真を選択")
-                            .font(.headline)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 150)
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-            }
-
-            // 抽出されたテキストの表示
+            // Extracted text card
             if !viewModel.extractedText.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("認識されたテキスト")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    Text(viewModel.extractedText)
-                        .font(.body)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-            }
-
-            Spacer()
-        }
-        .confirmationDialog("画像の取得方法", isPresented: $showingSourcePicker) {
-            Button("カメラで撮影") {
-                viewModel.showingCamera = true
-            }
-
-            Button("フォトライブラリから選択") {
-                viewModel.showingImagePicker = true
+                extractedTextCard
             }
         }
         .photosPicker(
@@ -105,6 +38,117 @@ struct PhotoInputView: View {
                 }
             }
         }
+    }
+
+    private var headerCard: some View {
+        HStack(spacing: NeumorphicSpacing.sm) {
+            Image(systemName: "camera.viewfinder")
+                .font(.title3)
+                .foregroundStyle(Color.accentOrangeStart)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("写真から作成")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
+
+                Text("レシピや手書きメモから読み取り")
+                    .font(.caption)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, NeumorphicSpacing.xs)
+    }
+
+    private var imageCard: some View {
+        Group {
+            if let image = viewModel.selectedImage {
+                VStack(spacing: NeumorphicSpacing.md) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 200)
+                        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
+
+                    // 変更ボタン（2つ横並び）
+                    HStack(spacing: NeumorphicSpacing.sm) {
+                        PhotoSourceButton(
+                            title: "カメラ",
+                            icon: "camera.fill",
+                            isCompact: true
+                        ) {
+                            viewModel.showingCamera = true
+                        }
+
+                        PhotoSourceButton(
+                            title: "ライブラリ",
+                            icon: "photo.on.rectangle",
+                            isCompact: true
+                        ) {
+                            viewModel.showingImagePicker = true
+                        }
+                    }
+                }
+                .padding(NeumorphicSpacing.md)
+                .background(Color.neumorphicSurface)
+                .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+                .neumorphicShadow()
+            } else {
+                // 初期状態: カメラとフォトライブラリの2つのボタン
+                HStack(spacing: NeumorphicSpacing.md) {
+                    PhotoSourceButton(
+                        title: "カメラで撮影",
+                        icon: "camera.fill",
+                        isCompact: false
+                    ) {
+                        viewModel.showingCamera = true
+                    }
+
+                    PhotoSourceButton(
+                        title: "ライブラリ",
+                        icon: "photo.on.rectangle",
+                        isCompact: false
+                    ) {
+                        viewModel.showingImagePicker = true
+                    }
+                }
+            }
+        }
+    }
+
+    private var extractedTextCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
+            Text("認識されたテキスト")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(Color.neumorphicTextSecondary)
+
+            Text(viewModel.extractedText)
+                .font(.body)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+                .padding(NeumorphicSpacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.neumorphicBackground)
+                .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
+                .shadow(
+                    color: Color.neumorphicDarkShadow,
+                    radius: 2,
+                    x: 1,
+                    y: 1
+                )
+                .shadow(
+                    color: Color.neumorphicLightShadow,
+                    radius: 2,
+                    x: -1,
+                    y: -1
+                )
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
     }
 }
 
@@ -378,6 +422,48 @@ class CameraOverlayView: UIView {
     }
 }
 
+// MARK: - Photo Source Button
+
+struct PhotoSourceButton: View {
+    let title: String
+    let icon: String
+    let isCompact: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: isCompact ? 6 : NeumorphicSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(Color.neumorphicBackground)
+                        .frame(width: isCompact ? 44 : 60, height: isCompact ? 44 : 60)
+
+                    Image(systemName: icon)
+                        .font(.system(size: isCompact ? 18 : 24))
+                        .foregroundStyle(Color.orangeGradient)
+                }
+
+                Text(title)
+                    .font(isCompact ? .caption : .subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, isCompact ? NeumorphicSpacing.sm : NeumorphicSpacing.lg)
+            .background(Color.neumorphicSurface)
+            .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        }
+        .buttonStyle(.plain)
+        .neumorphicShadow()
+    }
+}
+
 #Preview {
-    PhotoInputView(viewModel: CreateChecklistViewModel())
+    ZStack {
+        Color.neumorphicBackground.ignoresSafeArea()
+        ScrollView {
+            PhotoInputView(viewModel: CreateChecklistViewModel())
+                .padding()
+        }
+    }
 }

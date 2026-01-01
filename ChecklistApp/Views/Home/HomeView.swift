@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
@@ -11,30 +12,24 @@ struct HomeView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             ZStack {
+                // Neumorphic background
+                Color.neumorphicBackground.ignoresSafeArea()
+
                 if checklists.isEmpty && viewModel.searchText.isEmpty && viewModel.selectedCategory == nil {
                     emptyStateView
                 } else {
-                    checklistListView
+                    checklistScrollView
                 }
 
-                // FAB
+                // Neumorphic FAB
                 VStack {
                     Spacer()
                     HStack {
                         Spacer()
-                        Button {
+                        NeumorphicFAB {
                             viewModel.showingCreateSheet = true
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white)
-                                .frame(width: 56, height: 56)
-                                .background(Color.accentColor)
-                                .clipShape(Circle())
-                                .shadow(radius: 4)
                         }
-                        .padding()
+                        .padding(NeumorphicSpacing.lg)
                     }
                 }
             }
@@ -60,7 +55,8 @@ struct HomeView: View {
                             }
                         }
                     } label: {
-                        Label("フィルター", systemImage: "line.3.horizontal.decrease.circle")
+                        Image(systemName: viewModel.selectedCategory != nil ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                            .foregroundStyle(viewModel.selectedCategory != nil ? Color.accentOrangeStart : Color.neumorphicTextSecondary)
                     }
                 }
 
@@ -69,6 +65,7 @@ struct HomeView: View {
                         viewModel.showingSettings = true
                     } label: {
                         Image(systemName: "gearshape")
+                            .foregroundStyle(Color.neumorphicTextSecondary)
                     }
                 }
             }
@@ -91,46 +88,87 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Empty State View
+
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checklist")
-                .font(.system(size: 60))
-                .foregroundStyle(.secondary)
+        VStack(spacing: NeumorphicSpacing.lg) {
+            // Neumorphic icon container
+            ZStack {
+                Circle()
+                    .fill(Color.neumorphicSurface)
+                    .frame(width: 120, height: 120)
+                    .neumorphicShadow()
+
+                Image(systemName: "checklist")
+                    .font(.system(size: 50))
+                    .foregroundStyle(Color.orangeGradient)
+            }
 
             Text("チェックリストがありません")
                 .font(.title2)
-                .fontWeight(.medium)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.neumorphicTextPrimary)
 
             Text("右下の+ボタンから\n新しいチェックリストを作成しましょう")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.neumorphicTextSecondary)
                 .multilineTextAlignment(.center)
         }
-        .padding()
+        .padding(NeumorphicSpacing.xl)
     }
 
-    private var checklistListView: some View {
-        List {
+    // MARK: - Checklist Scroll View
+
+    private var checklistScrollView: some View {
+        ScrollView {
             let filtered = viewModel.filteredChecklists(checklists)
 
             if filtered.isEmpty {
-                ContentUnavailableView(
-                    "該当するチェックリストがありません",
-                    systemImage: "magnifyingglass",
-                    description: Text("検索条件を変更してください")
-                )
+                // Empty search result
+                VStack(spacing: NeumorphicSpacing.md) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 40))
+                        .foregroundStyle(Color.neumorphicTextTertiary)
+
+                    Text("該当するチェックリストがありません")
+                        .font(.headline)
+                        .foregroundStyle(Color.neumorphicTextSecondary)
+
+                    Text("検索条件を変更してください")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.neumorphicTextTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 100)
             } else {
-                ForEach(filtered) { checklist in
-                    NavigationLink(destination: ChecklistDetailView(checklist: checklist)) {
-                        ChecklistRowView(checklist: checklist)
+                LazyVStack(spacing: NeumorphicSpacing.md) {
+                    ForEach(Array(filtered.enumerated()), id: \.element.id) { index, checklist in
+                        NavigationLink(value: checklist) {
+                            ChecklistCardView(checklist: checklist)
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                deleteChecklist(checklist)
+                            } label: {
+                                Label("削除", systemImage: "trash")
+                            }
+                        }
                     }
                 }
-                .onDelete { indexSet in
-                    viewModel.deleteChecklists(at: indexSet, from: checklists, modelContext: modelContext)
-                }
+                .padding(.horizontal, NeumorphicSpacing.md)
+                .padding(.top, NeumorphicSpacing.md)
+                .padding(.bottom, 100) // Space for FAB
             }
         }
-        .listStyle(.insetGrouped)
+    }
+
+    // MARK: - Actions
+
+    private func deleteChecklist(_ checklist: Checklist) {
+        modelContext.delete(checklist)
+        try? modelContext.save()
+        WidgetKit.WidgetCenter.shared.reloadAllTimelines()
     }
 }
 

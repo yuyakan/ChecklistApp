@@ -91,6 +91,16 @@ class ChecklistDetailViewModel: ObservableObject {
         }
     }
 
+    func deleteItem(_ item: ChecklistItemModel) {
+        checklist.removeItem(item)
+        reloadWidget()
+
+        // Live Activityがアクティブなら更新
+        if isLiveActivityActive {
+            LiveActivityService.shared.updateActivity(for: checklist)
+        }
+    }
+
     func moveItems(from source: IndexSet, to destination: Int) {
         checklist.moveItem(from: source, to: destination)
     }

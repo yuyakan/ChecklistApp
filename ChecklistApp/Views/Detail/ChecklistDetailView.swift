@@ -1,4 +1,4 @@
- import SwiftUI
+import SwiftUI
 import UIKit
 import SwiftData
 
@@ -15,109 +15,29 @@ struct ChecklistDetailView: View {
     }
 
     var body: some View {
-        List {
-            // 進捗セクション
-            Section {
-                VStack(spacing: 12) {
-                    HStack {
-                        Text("進捗")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+        ZStack {
+            // Neumorphic background
+            Color.neumorphicBackground.ignoresSafeArea()
 
-                        Spacer()
+            ScrollView {
+                VStack(spacing: NeumorphicSpacing.md) {
+                    // Progress Card
+                    progressCard
 
-                        Text("\(checklist.completedCount)/\(checklist.totalCount)")
-                            .font(.headline)
-                            .monospacedDigit()
-                    }
+                    // Live Activity Card
+                    liveActivityCard
 
-                    ProgressView(value: checklist.progress)
-                        .tint(progressColor)
+                    // Items Card
+                    itemsCard
 
-                    if checklist.isCompleted {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("完了!")
-                                .font(.subheadline)
-                                .foregroundStyle(.green)
-                        }
-                    }
+                    // Info Card
+                    infoCard
                 }
-                .padding(.vertical, 4)
-
-                // Live Activity トグル
-                Button {
-                    viewModel.toggleLiveActivity()
-                } label: {
-                    HStack {
-                        Image(systemName: viewModel.isLiveActivityActive ? "bell.badge.fill" : "bell")
-                            .foregroundStyle(viewModel.isLiveActivityActive ? .green : .secondary)
-                        Text("ロック画面に表示")
-                        Spacer()
-                        if viewModel.isLiveActivityActive {
-                            Text("オン")
-                                .font(.subheadline)
-                                .foregroundStyle(.green)
-                        } else {
-                            Text("オフ")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-
-            // チェックリスト項目
-            Section {
-                ForEach(checklist.sortedItems) { item in
-                    ChecklistItemRowView(
-                        item: item,
-                        onToggle: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                viewModel.toggleItem(item)
-                            }
-                        },
-                        onUpdate: { name, note, priority in
-                            viewModel.updateItem(item, name: name, note: note, priority: priority)
-                        }
-                    )
-                }
-                .onDelete(perform: viewModel.deleteItems)
-                .onMove(perform: viewModel.moveItems)
-
-                // 新規項目追加
-                Button {
-                    viewModel.showingAddItem = true
-                } label: {
-                    Label("項目を追加", systemImage: "plus.circle")
-                }
-            } header: {
-                Text("項目")
-            }
-
-            // 情報セクション
-            Section {
-                LabeledContent("カテゴリ") {
-                    Label(checklist.category.description, systemImage: checklist.category.icon)
-                }
-
-                LabeledContent("作成方法") {
-                    Label(checklist.inputSource.description, systemImage: checklist.inputSource.icon)
-                }
-
-                LabeledContent("作成日") {
-                    Text(checklist.createdAt.formatted(date: .abbreviated, time: .shortened))
-                }
-
-                LabeledContent("更新日") {
-                    Text(checklist.updatedAt.formatted(date: .abbreviated, time: .shortened))
-                }
-            } header: {
-                Text("情報")
+                .padding(.horizontal, NeumorphicSpacing.md)
+                .padding(.top, NeumorphicSpacing.md)
+                .padding(.bottom, NeumorphicSpacing.xl)
             }
         }
-        .listStyle(.insetGrouped)
         .navigationTitle(checklist.title)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
@@ -144,11 +64,8 @@ struct ChecklistDetailView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
+                        .foregroundStyle(Color.neumorphicTextSecondary)
                 }
-            }
-
-            ToolbarItem(placement: .topBarTrailing) {
-                EditButton()
             }
         }
         .alert("タイトルを編集", isPresented: $viewModel.isEditing) {
@@ -171,8 +88,250 @@ struct ChecklistDetailView: View {
         }
     }
 
-    private var progressColor: Color {
-        .progress(checklist.progress, isCompleted: checklist.isCompleted)
+    // MARK: - Progress Card
+
+    private var progressCard: some View {
+        VStack(spacing: NeumorphicSpacing.md) {
+            HStack {
+                Text("進捗")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
+
+                Spacer()
+            }
+
+            HStack(spacing: NeumorphicSpacing.lg) {
+                // Circular progress
+                NeumorphicCircularProgress(
+                    progress: checklist.progress,
+                    size: 100,
+                    lineWidth: 10
+                )
+
+                VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
+                    // Count
+                    HStack(spacing: NeumorphicSpacing.xs) {
+                        Text("\(checklist.completedCount)")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundStyle(Color.orangeGradient)
+
+                        Text("/ \(checklist.totalCount)")
+                            .font(.title2)
+                            .foregroundStyle(Color.neumorphicTextSecondary)
+                    }
+                    .monospacedDigit()
+
+                    Text("項目完了")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.neumorphicTextTertiary)
+
+                    if checklist.isCompleted {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("すべて完了!")
+                        }
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color.statusSuccess)
+                    }
+                }
+
+                Spacer()
+            }
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    // MARK: - Live Activity Card
+
+    private var liveActivityCard: some View {
+        Button {
+            viewModel.toggleLiveActivity()
+        } label: {
+            HStack(spacing: NeumorphicSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(viewModel.isLiveActivityActive ? Color.statusSuccess.opacity(0.15) : Color.neumorphicBackground)
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: viewModel.isLiveActivityActive ? "bell.badge.fill" : "bell")
+                        .font(.title3)
+                        .foregroundStyle(viewModel.isLiveActivityActive ? Color.statusSuccess : Color.neumorphicTextSecondary)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("ロック画面に表示")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color.neumorphicTextPrimary)
+
+                    Text(viewModel.isLiveActivityActive ? "Live Activityがオンです" : "タップしてオンにする")
+                        .font(.caption)
+                        .foregroundStyle(Color.neumorphicTextTertiary)
+                }
+
+                Spacer()
+
+                // Toggle indicator
+                ZStack {
+                    Capsule()
+                        .fill(viewModel.isLiveActivityActive ? Color.statusSuccess : Color.neumorphicBackground)
+                        .frame(width: 50, height: 28)
+                        .shadow(
+                            color: Color.neumorphicDarkShadow,
+                            radius: 2,
+                            x: 1,
+                            y: 1
+                        )
+                        .shadow(
+                            color: Color.neumorphicLightShadow,
+                            radius: 2,
+                            x: -1,
+                            y: -1
+                        )
+
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 22, height: 22)
+                        .offset(x: viewModel.isLiveActivityActive ? 10 : -10)
+                        .animation(.spring(response: 0.3), value: viewModel.isLiveActivityActive)
+                }
+            }
+            .padding(NeumorphicSpacing.md)
+            .background(Color.neumorphicSurface)
+            .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+            .neumorphicShadow()
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Items Card
+
+    private var itemsCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
+            HStack {
+                Text("項目")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
+
+                Spacer()
+
+                Text("\(checklist.sortedItems.count)件")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+            }
+            .padding(.horizontal, NeumorphicSpacing.md)
+            .padding(.top, NeumorphicSpacing.md)
+
+            Divider()
+                .padding(.horizontal, NeumorphicSpacing.md)
+
+            ForEach(checklist.sortedItems) { item in
+                ChecklistItemRowView(
+                    item: item,
+                    onToggle: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.toggleItem(item)
+                        }
+                    },
+                    onUpdate: { name, note, priority in
+                        viewModel.updateItem(item, name: name, note: note, priority: priority)
+                    },
+                    onDelete: {
+                        viewModel.deleteItem(item)
+                    }
+                )
+                .padding(.horizontal, NeumorphicSpacing.md)
+
+                if item.id != checklist.sortedItems.last?.id {
+                    Divider()
+                        .padding(.horizontal, NeumorphicSpacing.lg)
+                }
+            }
+
+            // Add item button
+            Button {
+                viewModel.showingAddItem = true
+            } label: {
+                HStack(spacing: NeumorphicSpacing.sm) {
+                    ZStack {
+                        Circle()
+                            .stroke(Color.accentOrangeStart.opacity(0.3), style: StrokeStyle(lineWidth: 2, dash: [4, 4]))
+                            .frame(width: 32, height: 32)
+
+                        Image(systemName: "plus")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.accentOrangeStart)
+                    }
+
+                    Text("項目を追加")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.accentOrangeStart)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(NeumorphicSpacing.md)
+            }
+            .buttonStyle(.plain)
+        }
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    // MARK: - Info Card
+
+    private var infoCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
+            Text("情報")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+                .padding(.horizontal, NeumorphicSpacing.md)
+                .padding(.top, NeumorphicSpacing.md)
+
+            Divider()
+                .padding(.horizontal, NeumorphicSpacing.md)
+
+            VStack(spacing: NeumorphicSpacing.sm) {
+                infoRow(label: "カテゴリ", value: checklist.category.description, icon: checklist.category.icon)
+                infoRow(label: "作成方法", value: checklist.inputSource.description, icon: checklist.inputSource.icon)
+                infoRow(label: "作成日", value: checklist.createdAt.formatted(date: .abbreviated, time: .shortened), icon: "calendar")
+                infoRow(label: "更新日", value: checklist.updatedAt.formatted(date: .abbreviated, time: .shortened), icon: "clock")
+            }
+            .padding(.horizontal, NeumorphicSpacing.md)
+            .padding(.bottom, NeumorphicSpacing.md)
+        }
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    private func infoRow(label: String, value: String, icon: String) -> some View {
+        HStack {
+            HStack(spacing: NeumorphicSpacing.sm) {
+                Image(systemName: icon)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+                    .frame(width: 24)
+
+                Text(label)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.neumorphicTextSecondary)
+            }
+
+            Spacer()
+
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+        }
+        .padding(.vertical, NeumorphicSpacing.xs)
     }
 }
 
@@ -184,20 +343,71 @@ struct AddItemSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("項目名", text: $viewModel.newItemName)
-                    TextField("メモ（任意）", text: $viewModel.itemNote)
-                }
+            ZStack {
+                Color.neumorphicBackground.ignoresSafeArea()
 
-                Section {
-                    Picker("優先度", selection: $viewModel.selectedPriority) {
-                        ForEach(Priority.allCases, id: \.self) { priority in
-                            Text(priority.description).tag(priority)
+                VStack(spacing: NeumorphicSpacing.lg) {
+                    // Item name field
+                    VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                        Text("項目名")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.neumorphicTextSecondary)
+
+                        NeumorphicTextField(
+                            placeholder: "項目を入力...",
+                            text: $viewModel.newItemName,
+                            icon: "checklist"
+                        )
+                    }
+
+                    // Note field
+                    VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                        Text("メモ（任意）")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.neumorphicTextSecondary)
+
+                        NeumorphicTextField(
+                            placeholder: "メモを入力...",
+                            text: $viewModel.itemNote,
+                            icon: "note.text"
+                        )
+                    }
+
+                    // Priority picker
+                    VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                        Text("優先度")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.neumorphicTextSecondary)
+
+                        HStack(spacing: NeumorphicSpacing.sm) {
+                            ForEach(Priority.allCases, id: \.self) { priority in
+                                NeumorphicPriorityButton(
+                                    priority: priority,
+                                    isSelected: viewModel.selectedPriority == priority
+                                ) {
+                                    viewModel.selectedPriority = priority
+                                }
+                            }
                         }
                     }
-                    .pickerStyle(.segmented)
+
+                    Spacer()
+
+                    // Add button
+                    NeumorphicButton_Unified(
+                        title: "追加",
+                        style: .accent,
+                        isEnabled: !viewModel.newItemName.isEmpty
+                    ) {
+                        viewModel.addItem()
+                        dismiss()
+                    }
+                    .padding(.bottom, NeumorphicSpacing.md)
                 }
+                .padding(NeumorphicSpacing.lg)
             }
             .navigationTitle("項目を追加")
             .navigationBarTitleDisplayMode(.inline)
@@ -206,18 +416,42 @@ struct AddItemSheet: View {
                     Button("キャンセル") {
                         dismiss()
                     }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("追加") {
-                        viewModel.addItem()
-                        dismiss()
-                    }
-                    .disabled(viewModel.newItemName.isEmpty)
+                    .foregroundStyle(Color.neumorphicTextSecondary)
                 }
             }
         }
         .presentationDetents([.medium])
+    }
+}
+
+// MARK: - Priority Button
+
+struct NeumorphicPriorityButton: View {
+    let priority: Priority
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(Color.priority(priority))
+                    .frame(width: 10, height: 10)
+
+                Text(priority.description)
+                    .font(.subheadline)
+                    .fontWeight(isSelected ? .medium : .regular)
+            }
+            .foregroundStyle(isSelected ? Color.neumorphicTextPrimary : Color.neumorphicTextSecondary)
+            .padding(.horizontal, NeumorphicSpacing.md)
+            .padding(.vertical, NeumorphicSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: NeumorphicRadius.sm)
+                    .fill(isSelected ? Color.neumorphicSurface : Color.neumorphicBackground)
+            )
+        }
+        .buttonStyle(.plain)
+        .neumorphicShadow(isPressed: !isSelected, subtle: true)
     }
 }
 

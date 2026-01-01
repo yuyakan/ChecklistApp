@@ -1,4 +1,4 @@
- import SwiftUI
+import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -6,34 +6,222 @@ struct SettingsView: View {
     @AppStorage("appearanceMode") private var appearanceMode: String = "system"
 
     var body: some View {
-        Form {
-            // 外観設定
-            Section {
-                Picker("テーマ", selection: $appearanceMode) {
-                    Text("システム設定に従う").tag("system")
-                    Text("ライト").tag("light")
-                    Text("ダーク").tag("dark")
-                }
-            } header: {
-                Text("外観")
-                    .padding(.top, 8)
-            } footer: {
-                Text("アプリの外観モードを設定します")
-            }
+        NavigationStack {
+            ZStack {
+                Color.neumorphicBackground.ignoresSafeArea()
 
-            // デフォルト設定
-            Section {
-                Picker("デフォルトカテゴリ", selection: $defaultCategory) {
-                    ForEach(Category.allCases, id: \.self) { category in
-                        Label(category.description, systemImage: category.icon)
-                            .tag(category.rawValue)
+                ScrollView {
+                    VStack(spacing: NeumorphicSpacing.md) {
+                        // Appearance section
+                        appearanceCard
+
+                        // Default settings section
+                        defaultSettingsCard
+
+                        // About section
+                        aboutCard
+                    }
+                    .padding(NeumorphicSpacing.md)
+                }
+            }
+            .navigationTitle("設定")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完了") {
+                        dismiss()
+                    }
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.accentOrangeStart)
+                }
+            }
+        }
+    }
+
+    private var appearanceCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
+            Label("外観", systemImage: "paintbrush.fill")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+
+            VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                Text("テーマ")
+                    .font(.caption)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+
+                HStack(spacing: NeumorphicSpacing.sm) {
+                    ThemeOptionButton(
+                        title: "自動",
+                        icon: "gearshape",
+                        isSelected: appearanceMode == "system"
+                    ) {
+                        appearanceMode = "system"
+                    }
+
+                    ThemeOptionButton(
+                        title: "ライト",
+                        icon: "sun.max.fill",
+                        isSelected: appearanceMode == "light"
+                    ) {
+                        appearanceMode = "light"
+                    }
+
+                    ThemeOptionButton(
+                        title: "ダーク",
+                        icon: "moon.fill",
+                        isSelected: appearanceMode == "dark"
+                    ) {
+                        appearanceMode = "dark"
                     }
                 }
-            } header: {
-                Text("デフォルト設定")
-            } footer: {
-                Text("新規チェックリスト作成時のデフォルトカテゴリを設定します")
             }
+
+            Text("アプリの外観モードを設定します")
+                .font(.caption)
+                .foregroundStyle(Color.neumorphicTextTertiary)
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    private var defaultSettingsCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
+            Label("デフォルト設定", systemImage: "slider.horizontal.3")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+
+            VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                Text("デフォルトカテゴリ")
+                    .font(.caption)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: NeumorphicSpacing.xs) {
+                    ForEach(Category.allCases, id: \.self) { category in
+                        DefaultCategoryButton(
+                            category: category,
+                            isSelected: defaultCategory == category.rawValue
+                        ) {
+                            defaultCategory = category.rawValue
+                        }
+                    }
+                }
+            }
+
+            Text("新規チェックリスト作成時のデフォルトカテゴリを設定します")
+                .font(.caption)
+                .foregroundStyle(Color.neumorphicTextTertiary)
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    private var aboutCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
+            Label("このアプリについて", systemImage: "info.circle.fill")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+
+            VStack(spacing: NeumorphicSpacing.sm) {
+                aboutRow(label: "バージョン", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                aboutRow(label: "ビルド", value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1")
+            }
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    private func aboutRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(Color.neumorphicTextSecondary)
+
+            Spacer()
+
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+        }
+        .padding(.vertical, NeumorphicSpacing.xxs)
+    }
+}
+
+struct ThemeOptionButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.title3)
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(isSelected ? .medium : .regular)
+            }
+            .foregroundStyle(isSelected ? .white : Color.neumorphicTextSecondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, NeumorphicSpacing.sm)
+            .background(themeBackground)
+            .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.sm))
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var themeBackground: some View {
+        if isSelected {
+            Color.orangeGradient
+        } else {
+            Color.neumorphicBackground
+        }
+    }
+}
+
+struct DefaultCategoryButton: View {
+    let category: Category
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: category.icon)
+                    .font(.subheadline)
+                Text(category.description)
+                    .font(.caption2)
+                    .lineLimit(1)
+            }
+            .foregroundStyle(isSelected ? .white : Color.neumorphicTextSecondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, NeumorphicSpacing.sm)
+            .background(categoryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.sm))
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var categoryBackground: some View {
+        if isSelected {
+            Color.orangeGradient
+        } else {
+            Color.neumorphicBackground
         }
     }
 }

@@ -626,7 +626,7 @@ struct ChecklistItemRow: View {
             HStack(spacing: 8) {
                 Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(compact ? .caption : .body)
-                    .foregroundStyle(item.isCompleted ? .green : .secondary)
+                    .foregroundStyle(item.isCompleted ? WidgetColors.statusSuccess : .secondary)
 
                 Text(item.name)
                     .font(compact ? .caption : .subheadline)
@@ -726,9 +726,9 @@ struct NavigationButtons: View {
 struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: "checkmark.circle")
+            Image(systemName: "checkmark.circle.fill")
                 .font(.largeTitle)
-                .foregroundStyle(.green)
+                .foregroundStyle(WidgetColors.statusSuccess)
 
             Text("すべて完了！")
                 .font(.headline)
@@ -742,16 +742,36 @@ struct EmptyStateView: View {
     }
 }
 
+// MARK: - Widget Colors (Neumorphic Design System)
+
+enum WidgetColors {
+    // Accent colors - Orange gradient
+    static let accentOrangeStart = Color(red: 1.0, green: 0.55, blue: 0.25)  // #FF8C40
+    static let accentOrangeEnd = Color(red: 1.0, green: 0.40, blue: 0.40)    // #FF6666
+
+    // Status colors
+    static let statusSuccess = Color(red: 0.30, green: 0.75, blue: 0.45)     // #4DC072
+
+    // Orange gradient
+    static var orangeGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [accentOrangeStart, accentOrangeEnd]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+}
+
 // MARK: - Helper Functions
 
-/// 進捗率に応じた色を返す（Widget共通）
+/// 進捗率に応じた色を返す（Widget共通 - Neumorphicデザイン対応）
 func progressColor(for progress: Double, isCompleted: Bool = false) -> Color {
     if isCompleted || progress >= 1.0 {
-        return .green
+        return WidgetColors.statusSuccess
     } else if progress > 0.5 {
-        return .blue
+        return WidgetColors.accentOrangeEnd
     } else if progress > 0 {
-        return .orange
+        return WidgetColors.accentOrangeStart
     } else {
         return .gray
     }
@@ -911,7 +931,7 @@ struct LiveActivityItemRow: View {
         HStack(spacing: 3) {
             Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
                 .font(.system(size: 9))
-                .foregroundStyle(item.isCompleted ? .green : .secondary)
+                .foregroundStyle(item.isCompleted ? WidgetColors.statusSuccess : .secondary)
             Text(item.name)
                 .font(.system(size: 10))
                 .strikethrough(item.isCompleted)

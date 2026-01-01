@@ -1,9 +1,10 @@
 import SwiftUI
 
 extension Color {
-    static let priorityHigh = Color.red
-    static let priorityMedium = Color.orange
-    static let priorityLow = Color.green
+    // MARK: - Priority Colors (Neumorphic)
+    static let priorityHigh = Color.priorityHighNeu
+    static let priorityMedium = Color.priorityMediumNeu
+    static let priorityLow = Color.priorityLowNeu
 
     static func priority(_ priority: Priority) -> Color {
         switch priority {
@@ -16,16 +17,16 @@ extension Color {
         }
     }
 
-    /// 進捗率に応じた色を返す
+    /// 進捗率に応じた色を返す（オレンジアクセント対応）
     static func progress(_ progress: Double, isCompleted: Bool) -> Color {
         if isCompleted {
-            return .green
+            return .statusSuccess
         } else if progress > 0.5 {
-            return .blue
+            return .statusInfo
         } else if progress > 0 {
-            return .orange
+            return .accentOrangeStart
         } else {
-            return .gray
+            return .neumorphicTextTertiary
         }
     }
 }

@@ -1,71 +1,110 @@
- import SwiftUI
+import SwiftUI
 
 struct TextInputView: View {
     @ObservedObject var viewModel: CreateChecklistViewModel
     @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
-        VStack(spacing: 20) {
-            // 説明
-            VStack(spacing: 8) {
-                Image(systemName: "text.alignleft")
-                    .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+        VStack(spacing: NeumorphicSpacing.lg) {
+            // Header card
+            headerCard
 
-                Text("テキストからチェックリストを作成")
-                    .font(.headline)
+            // Text input card
+            textInputCard
 
-                Text("箇条書き、段落、カンマ区切りなど\n様々な形式のテキストに対応")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+            // Sample chips
+            sampleChips
+
+            // Convert button
+            NeumorphicAccentButton(
+                title: "チェックリストに変換",
+                icon: "sparkles",
+                action: {
+                    isTextFieldFocused = false
+                    Task {
+                        await viewModel.processTextInput()
+                    }
+                },
+                isDisabled: viewModel.inputText.isEmpty || viewModel.isProcessing
+            )
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("完了") {
+                    isTextFieldFocused = false
+                }
+                .foregroundStyle(Color.accentOrangeStart)
             }
-            .padding()
+        }
+    }
 
-            // テキスト入力フィールド
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("入力テキスト")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+    private var headerCard: some View {
+        HStack(spacing: NeumorphicSpacing.sm) {
+            Image(systemName: "text.alignleft")
+                .font(.title3)
+                .foregroundStyle(Color.accentOrangeStart)
 
-                    Spacer()
+            VStack(alignment: .leading, spacing: 2) {
+                Text("テキストから作成")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
 
-                    if !viewModel.inputText.isEmpty {
-                        Button("クリア") {
-                            viewModel.inputText = ""
+                Text("箇条書き、カンマ区切りなど様々な形式に対応")
+                    .font(.caption)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, NeumorphicSpacing.xs)
+    }
+
+    private var textInputCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
+            HStack {
+                Text("入力テキスト")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.neumorphicTextSecondary)
+
+                Spacer()
+
+                if !viewModel.inputText.isEmpty {
+                    Button {
+                        viewModel.inputText = ""
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "xmark.circle.fill")
+                            Text("クリア")
                         }
                         .font(.caption)
+                        .foregroundStyle(Color.neumorphicTextTertiary)
                     }
                 }
-
-                TextEditor(text: $viewModel.inputText)
-                    .focused($isTextFieldFocused)
-                    .frame(minHeight: 150)
-                    .padding(8)
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(.systemGray4), lineWidth: 1)
-                    )
-                    .overlay(alignment: .topLeading) {
-                        if viewModel.inputText.isEmpty {
-                            Text("例：\n・牛乳\n・卵\n・パン\n\nまたは\n\n牛乳、卵、パン、バター")
-                                .foregroundStyle(.tertiary)
-                                .padding(12)
-                                .allowsHitTesting(false)
-                        }
-                    }
             }
 
-            // サンプル入力ボタン
-            HStack {
-                Text("サンプル:")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            NeumorphicTextEditor(
+                text: $viewModel.inputText,
+                placeholder: "例：\n・牛乳\n・卵\n・パン\n\nまたは\n\n牛乳、卵、パン、バター"
+            )
+            .focused($isTextFieldFocused)
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
 
-                Button("買い物リスト") {
+    private var sampleChips: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+            Text("サンプル")
+                .font(.caption)
+                .foregroundStyle(Color.neumorphicTextTertiary)
+
+            HStack(spacing: NeumorphicSpacing.sm) {
+                SampleChipButton(title: "買い物リスト", icon: "cart") {
                     viewModel.inputText = """
                     今日買うもの
                     - 牛乳 1本
@@ -75,46 +114,53 @@ struct TextInputView: View {
                     - ヨーグルト
                     """
                 }
-                .font(.caption)
-                .buttonStyle(.bordered)
 
-                Button("レシピ") {
+                SampleChipButton(title: "レシピ", icon: "frying.pan") {
                     viewModel.inputText = """
                     カレーの材料（4人分）
                     玉ねぎ 2個、にんじん 1本、じゃがいも 3個、
                     豚肉 300g、カレールー 1箱、水 800ml
                     """
                 }
-                .font(.caption)
-                .buttonStyle(.bordered)
-            }
-
-            // 変換ボタン
-            Button {
-                isTextFieldFocused = false
-                Task {
-                    await viewModel.processTextInput()
-                }
-            } label: {
-                Label("チェックリストに変換", systemImage: "sparkles")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(viewModel.inputText.isEmpty || viewModel.isProcessing)
-
-            Spacer()
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("完了") {
-                    isTextFieldFocused = false
-                }
             }
         }
     }
 }
 
+struct SampleChipButton: View {
+    let title: String
+    let icon: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption)
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+            }
+            .foregroundStyle(Color.accentOrangeStart)
+            .padding(.horizontal, NeumorphicSpacing.sm)
+            .padding(.vertical, NeumorphicSpacing.xs)
+            .background(Color.neumorphicSurface)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(Color.accentOrangeStart.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 #Preview {
-    TextInputView(viewModel: CreateChecklistViewModel())
+    ZStack {
+        Color.neumorphicBackground.ignoresSafeArea()
+        ScrollView {
+            TextInputView(viewModel: CreateChecklistViewModel())
+                .padding()
+        }
+    }
 }

@@ -1,4 +1,4 @@
- import SwiftUI
+import SwiftUI
 
 struct ChecklistPreviewView: View {
     @Environment(\.dismiss) private var dismiss
@@ -17,56 +17,23 @@ struct ChecklistPreviewView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                // タイトルセクション
-                Section {
-                    TextField("タイトル", text: $editingTitle)
+            ZStack {
+                Color.neumorphicBackground.ignoresSafeArea()
 
-                    Picker("カテゴリ", selection: $selectedCategory) {
-                        ForEach(Category.allCases, id: \.self) { category in
-                            Label(category.description, systemImage: category.icon)
-                                .tag(category)
-                        }
+                ScrollView {
+                    VStack(spacing: NeumorphicSpacing.md) {
+                        // Title and category card
+                        titleCard
+
+                        // Items preview card
+                        itemsCard
+
+                        // Footer hint
+                        Text("長押しで削除できます")
+                            .font(.caption)
+                            .foregroundStyle(Color.neumorphicTextTertiary)
                     }
-                }
-
-                // 項目プレビュー
-                Section {
-                    ForEach(checklist.sortedItems) { item in
-                        HStack {
-                            Image(systemName: "circle")
-                                .foregroundStyle(.secondary)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(item.name)
-                                    .font(.body)
-
-                                if let note = item.note, !note.isEmpty {
-                                    Text(note)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            Spacer()
-
-                            // 優先度表示
-                            priorityBadge(item.priority)
-                        }
-                    }
-                    .onDelete { offsets in
-                        let sortedItems = checklist.sortedItems
-                        for index in offsets {
-                            checklist.removeItem(sortedItems[index])
-                        }
-                    }
-                    .onMove { source, destination in
-                        checklist.moveItem(from: source, to: destination)
-                    }
-                } header: {
-                    Text("項目 (\(checklist.items.count)件)")
-                } footer: {
-                    Text("スワイプで削除、長押しで並び替えができます")
+                    .padding(NeumorphicSpacing.md)
                 }
             }
             .navigationTitle("プレビュー")
@@ -76,6 +43,7 @@ struct ChecklistPreviewView: View {
                     Button("キャンセル") {
                         dismiss()
                     }
+                    .foregroundStyle(Color.neumorphicTextSecondary)
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -84,25 +52,176 @@ struct ChecklistPreviewView: View {
                         checklist.category = selectedCategory
                         onSave()
                     }
+                    .fontWeight(.semibold)
+                    .foregroundStyle(
+                        (editingTitle.isEmpty || checklist.items.isEmpty)
+                            ? Color.neumorphicTextTertiary
+                            : Color.accentOrangeStart
+                    )
                     .disabled(editingTitle.isEmpty || checklist.items.isEmpty)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    EditButton()
                 }
             }
         }
     }
 
+    private var titleCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
+            Text("基本情報")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+
+            VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                Text("タイトル")
+                    .font(.caption)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+
+                NeumorphicTextField(
+                    placeholder: "タイトル",
+                    text: $editingTitle,
+                    icon: "text.alignleft"
+                )
+            }
+
+            VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                Text("カテゴリ")
+                    .font(.caption)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+
+                HStack(spacing: NeumorphicSpacing.xs) {
+                    ForEach(Category.allCases, id: \.self) { category in
+                        CategoryChipButton(
+                            category: category,
+                            isSelected: selectedCategory == category
+                        ) {
+                            selectedCategory = category
+                        }
+                    }
+                }
+            }
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    private var itemsCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
+            HStack {
+                Text("項目")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
+
+                Spacer()
+
+                Text("\(checklist.items.count)件")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.neumorphicTextTertiary)
+            }
+            .padding(.horizontal, NeumorphicSpacing.md)
+            .padding(.top, NeumorphicSpacing.md)
+
+            Divider()
+                .padding(.horizontal, NeumorphicSpacing.md)
+
+            ForEach(checklist.sortedItems) { item in
+                previewItemRow(item)
+                    .padding(.horizontal, NeumorphicSpacing.md)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            checklist.removeItem(item)
+                        } label: {
+                            Label("削除", systemImage: "trash")
+                        }
+                    }
+
+                if item.id != checklist.sortedItems.last?.id {
+                    Divider()
+                        .padding(.horizontal, NeumorphicSpacing.lg)
+                }
+            }
+
+            Spacer()
+                .frame(height: NeumorphicSpacing.md)
+        }
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
+    }
+
+    private func previewItemRow(_ item: ChecklistItemModel) -> some View {
+        HStack(spacing: NeumorphicSpacing.sm) {
+            Image(systemName: "circle")
+                .font(.title3)
+                .foregroundStyle(Color.neumorphicTextTertiary)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.name)
+                    .font(.body)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
+
+                if let note = item.note, !note.isEmpty {
+                    Text(note)
+                        .font(.caption)
+                        .foregroundStyle(Color.neumorphicTextSecondary)
+                }
+            }
+
+            Spacer()
+
+            // Priority badge
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(Color.priority(item.priority))
+                    .frame(width: 6, height: 6)
+
+                Text(item.priority.description)
+                    .font(.caption2)
+                    .fontWeight(.medium)
+            }
+            .foregroundStyle(Color.priority(item.priority))
+            .padding(.horizontal, NeumorphicSpacing.sm)
+            .padding(.vertical, NeumorphicSpacing.xxs)
+            .background(
+                Capsule()
+                    .fill(Color.priority(item.priority).opacity(0.12))
+            )
+        }
+        .padding(.vertical, NeumorphicSpacing.xs)
+    }
+}
+
+struct CategoryChipButton: View {
+    let category: Category
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: category.icon)
+                    .font(.subheadline)
+                Text(category.description)
+                    .font(.caption2)
+            }
+            .foregroundStyle(isSelected ? .white : Color.neumorphicTextSecondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, NeumorphicSpacing.sm)
+            .background(categoryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.sm))
+        }
+        .buttonStyle(.plain)
+    }
+
     @ViewBuilder
-    private func priorityBadge(_ priority: Priority) -> some View {
-        Text(priority.description)
-            .font(.caption2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(Color.priority(priority).opacity(0.2))
-            .foregroundStyle(Color.priority(priority))
-            .clipShape(Capsule())
+    private var categoryBackground: some View {
+        if isSelected {
+            Color.orangeGradient
+        } else {
+            Color.neumorphicBackground
+        }
     }
 }
 

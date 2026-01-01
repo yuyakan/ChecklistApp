@@ -9,30 +9,35 @@ struct CreateChecklistView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // モード選択タブ
-                modeSelector
+            ZStack {
+                // Neumorphic background
+                Color.neumorphicBackground.ignoresSafeArea()
 
-                Divider()
+                VStack(spacing: 0) {
+                    // Mode selector
+                    modeSelector
+                        .padding(.horizontal, NeumorphicSpacing.md)
+                        .padding(.top, NeumorphicSpacing.md)
 
-                // 各モードのコンテンツ
-                ScrollView {
-                    VStack(spacing: 20) {
-                        switch viewModel.selectedMode {
-                        case .photo:
-                            PhotoInputView(viewModel: viewModel)
-                        case .voice:
-                            VoiceInputView(viewModel: viewModel)
-                        case .text:
-                            TextInputView(viewModel: viewModel)
-                        case .aiGenerate:
-                            AIGenerateView(viewModel: viewModel)
+                    // Content for each mode
+                    ScrollView {
+                        VStack(spacing: NeumorphicSpacing.lg) {
+                            switch viewModel.selectedMode {
+                            case .photo:
+                                PhotoInputView(viewModel: viewModel)
+                            case .voice:
+                                VoiceInputView(viewModel: viewModel)
+                            case .text:
+                                TextInputView(viewModel: viewModel)
+                            case .aiGenerate:
+                                AIGenerateView(viewModel: viewModel)
+                            }
                         }
+                        .padding(NeumorphicSpacing.md)
                     }
-                    .padding()
                 }
 
-                // 処理中インジケータ
+                // Processing overlay
                 if viewModel.isProcessing {
                     processingOverlay
                 }
@@ -44,6 +49,7 @@ struct CreateChecklistView: View {
                     Button("キャンセル") {
                         dismiss()
                     }
+                    .foregroundStyle(Color.neumorphicTextSecondary)
                 }
             }
             .alert("エラー", isPresented: $viewModel.showingError) {
@@ -62,38 +68,37 @@ struct CreateChecklistView: View {
     }
 
     private var modeSelector: some View {
-        HStack(spacing: 0) {
-            ForEach(CreateInputMode.allCases, id: \.self) { mode in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.selectedMode = mode
-                    }
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: mode.icon)
-                            .font(.title3)
-                        Text(mode.title)
-                            .font(.caption)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(viewModel.selectedMode == mode ? Color.accentColor.opacity(0.1) : Color.clear)
-                    .foregroundStyle(viewModel.selectedMode == mode ? .primary : .secondary)
-                }
-            }
-        }
-        .background(Color(.systemGroupedBackground))
+        NeumorphicSegmentedControl(
+            options: CreateInputMode.allCases,
+            selection: $viewModel.selectedMode,
+            label: { $0.title },
+            icon: { $0.icon }
+        )
     }
 
     private var processingOverlay: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.5)
-            Text("処理中...")
-                .font(.headline)
+        ZStack {
+            Color.neumorphicBackground.opacity(0.9)
+                .ignoresSafeArea()
+
+            VStack(spacing: NeumorphicSpacing.lg) {
+                // Neumorphic loading indicator
+                ZStack {
+                    Circle()
+                        .fill(Color.neumorphicSurface)
+                        .frame(width: 80, height: 80)
+                        .neumorphicShadow()
+
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(Color.accentOrangeStart)
+                }
+
+                Text("処理中...")
+                    .font(.headline)
+                    .foregroundStyle(Color.neumorphicTextPrimary)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.ultraThinMaterial)
     }
 
     private func saveChecklist(_ checklist: Checklist) {
