@@ -171,23 +171,25 @@ struct ChecklistPreviewView: View {
 
             Spacer()
 
-            // Priority badge
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(Color.priority(item.priority))
-                    .frame(width: 6, height: 6)
+            // Priority badge (only show if priority is set)
+            if let priority = item.priority {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color.priority(priority))
+                        .frame(width: 6, height: 6)
 
-                Text(item.priority.description)
-                    .font(.caption2)
-                    .fontWeight(.medium)
+                    Text(priority.description)
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                }
+                .foregroundStyle(Color.priority(priority))
+                .padding(.horizontal, NeumorphicSpacing.sm)
+                .padding(.vertical, NeumorphicSpacing.xxs)
+                .background(
+                    Capsule()
+                        .fill(Color.priority(priority).opacity(0.12))
+                )
             }
-            .foregroundStyle(Color.priority(item.priority))
-            .padding(.horizontal, NeumorphicSpacing.sm)
-            .padding(.vertical, NeumorphicSpacing.xxs)
-            .background(
-                Capsule()
-                    .fill(Color.priority(item.priority).opacity(0.12))
-            )
         }
         .padding(.vertical, NeumorphicSpacing.xs)
     }

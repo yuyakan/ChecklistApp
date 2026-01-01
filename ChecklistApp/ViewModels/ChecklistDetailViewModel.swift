@@ -11,7 +11,7 @@ class ChecklistDetailViewModel: ObservableObject {
     @Published var newItemName = ""
     @Published var showingAddItem = false
     @Published var showingShareSheet = false
-    @Published var selectedPriority: Priority = .medium
+    @Published var selectedPriority: Priority? = nil
     @Published var itemNote = ""
     @Published var isLiveActivityActive = false
 
@@ -114,7 +114,7 @@ class ChecklistDetailViewModel: ObservableObject {
         checklist.updatedAt = Date()
     }
 
-    func updateItem(_ item: ChecklistItemModel, name: String, note: String?, priority: Priority) {
+    func updateItem(_ item: ChecklistItemModel, name: String, note: String?, priority: Priority?) {
         item.name = name
         item.note = note
         item.priority = priority
@@ -140,7 +140,7 @@ class ChecklistDetailViewModel: ObservableObject {
     private func resetNewItemFields() {
         newItemName = ""
         itemNote = ""
-        selectedPriority = .medium
+        selectedPriority = nil
         showingAddItem = false
     }
 

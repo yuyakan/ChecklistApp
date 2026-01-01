@@ -3,13 +3,13 @@ import SwiftUI
 struct ChecklistItemRowView: View {
     let item: ChecklistItemModel
     let onToggle: () -> Void
-    let onUpdate: (String, String?, Priority) -> Void
+    let onUpdate: (String, String?, Priority?) -> Void
     let onDelete: () -> Void
 
     @State private var showingEditSheet = false
     @State private var editingName: String = ""
     @State private var editingNote: String = ""
-    @State private var editingPriority: Priority = .medium
+    @State private var editingPriority: Priority? = nil
 
     var body: some View {
         HStack(spacing: NeumorphicSpacing.sm) {
@@ -35,8 +35,10 @@ struct ChecklistItemRowView: View {
 
             Spacer()
 
-            // Priority badge
-            priorityBadge
+            // Priority badge (only show if priority is set)
+            if item.priority != nil {
+                priorityBadge
+            }
         }
         .padding(.vertical, NeumorphicSpacing.sm)
         .contentShape(Rectangle())
@@ -63,27 +65,26 @@ struct ChecklistItemRowView: View {
         }
     }
 
+    @ViewBuilder
     private var priorityBadge: some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(priorityColor)
-                .frame(width: 8, height: 8)
+        if let priority = item.priority {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(Color.priority(priority))
+                    .frame(width: 8, height: 8)
 
-            Text(item.priority.description)
-                .font(.caption2)
-                .fontWeight(.medium)
+                Text(priority.description)
+                    .font(.caption2)
+                    .fontWeight(.medium)
+            }
+            .foregroundStyle(Color.priority(priority))
+            .padding(.horizontal, NeumorphicSpacing.sm)
+            .padding(.vertical, NeumorphicSpacing.xxs)
+            .background(
+                Capsule()
+                    .fill(Color.priority(priority).opacity(0.12))
+            )
         }
-        .foregroundStyle(priorityColor)
-        .padding(.horizontal, NeumorphicSpacing.sm)
-        .padding(.vertical, NeumorphicSpacing.xxs)
-        .background(
-            Capsule()
-                .fill(priorityColor.opacity(0.12))
-        )
-    }
-
-    private var priorityColor: Color {
-        .priority(item.priority)
     }
 
     private var editSheet: some View {
@@ -128,6 +129,13 @@ struct ChecklistItemRowView: View {
                             .foregroundStyle(Color.neumorphicTextSecondary)
 
                         HStack(spacing: NeumorphicSpacing.sm) {
+                            // None option
+                            NeumorphicNoPriorityButton(
+                                isSelected: editingPriority == nil
+                            ) {
+                                editingPriority = nil
+                            }
+
                             ForEach(Priority.allCases, id: \.self) { priority in
                                 NeumorphicPriorityButton(
                                     priority: priority,

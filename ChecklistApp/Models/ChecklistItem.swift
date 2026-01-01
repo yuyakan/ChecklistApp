@@ -12,12 +12,12 @@ class ChecklistItemModel {
 
     var checklist: Checklist?
 
-    var priority: Priority {
+    var priority: Priority? {
         get {
-            Priority(rawValue: priorityRaw) ?? .medium
+            priorityRaw.isEmpty ? nil : Priority(rawValue: priorityRaw)
         }
         set {
-            priorityRaw = newValue.rawValue
+            priorityRaw = newValue?.rawValue ?? ""
         }
     }
 
@@ -26,14 +26,14 @@ class ChecklistItemModel {
         name: String,
         note: String? = nil,
         isCompleted: Bool = false,
-        priority: Priority = .medium,
+        priority: Priority? = nil,
         order: Int = 0
     ) {
         self.id = id
         self.name = name
         self.note = note
         self.isCompleted = isCompleted
-        self.priorityRaw = priority.rawValue
+        self.priorityRaw = priority?.rawValue ?? ""
         self.order = order
     }
 }

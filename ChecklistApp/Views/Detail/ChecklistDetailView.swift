@@ -383,6 +383,13 @@ struct AddItemSheet: View {
                             .foregroundStyle(Color.neumorphicTextSecondary)
 
                         HStack(spacing: NeumorphicSpacing.sm) {
+                            // None option
+                            NeumorphicNoPriorityButton(
+                                isSelected: viewModel.selectedPriority == nil
+                            ) {
+                                viewModel.selectedPriority = nil
+                            }
+
                             ForEach(Priority.allCases, id: \.self) { priority in
                                 NeumorphicPriorityButton(
                                     priority: priority,
@@ -425,6 +432,34 @@ struct AddItemSheet: View {
 }
 
 // MARK: - Priority Button
+
+struct NeumorphicNoPriorityButton: View {
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Circle()
+                    .stroke(Color.neumorphicTextTertiary, lineWidth: 1.5)
+                    .frame(width: 10, height: 10)
+
+                Text("なし")
+                    .font(.subheadline)
+                    .fontWeight(isSelected ? .medium : .regular)
+            }
+            .foregroundStyle(isSelected ? Color.neumorphicTextPrimary : Color.neumorphicTextSecondary)
+            .padding(.horizontal, NeumorphicSpacing.md)
+            .padding(.vertical, NeumorphicSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: NeumorphicRadius.sm)
+                    .fill(isSelected ? Color.neumorphicSurface : Color.neumorphicBackground)
+            )
+        }
+        .buttonStyle(.plain)
+        .neumorphicShadow(isPressed: !isSelected, subtle: true)
+    }
+}
 
 struct NeumorphicPriorityButton: View {
     let priority: Priority
