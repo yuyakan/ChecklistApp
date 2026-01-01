@@ -16,16 +16,35 @@ class ChecklistDetailViewModel: ObservableObject {
     @Published var isLiveActivityActive = false
 
     let checklist: Checklist
+    private var cancellables = Set<AnyCancellable>()
 
     init(checklist: Checklist) {
         self.checklist = checklist
         self.editingTitle = checklist.title
         self.isLiveActivityActive = LiveActivityService.shared.isActivityActive(for: checklist.id)
+
+        // Live Activityの状態変化を監視
+        observeLiveActivityDismissal()
     }
 
     /// Live Activityの状態を更新
     func refreshLiveActivityState() {
         isLiveActivityActive = LiveActivityService.shared.isActivityActive(for: checklist.id)
+    }
+
+    /// Live Activityがロック画面から消去された場合の監視
+    private func observeLiveActivityDismissal() {
+        LiveActivityService.shared.$dismissedChecklistId
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] dismissedId in
+                guard let self = self,
+                      let dismissedId = dismissedId,
+                      dismissedId == self.checklist.id else { return }
+
+                // トグルをオフにする
+                self.isLiveActivityActive = false
+            }
+            .store(in: &cancellables)
     }
 
     /// Live Activityの表示を切り替え

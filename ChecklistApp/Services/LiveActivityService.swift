@@ -1,12 +1,17 @@
 import ActivityKit
 import Foundation
 import SwiftData
+import Combine
 
 @MainActor
-class LiveActivityService {
+class LiveActivityService: ObservableObject {
     static let shared = LiveActivityService()
 
     private var currentActivity: Activity<ChecklistActivityAttributes>?
+    private var stateMonitoringTask: Task<Void, Never>?
+
+    /// Live Activityが終了したチェックリストIDを通知
+    @Published var dismissedChecklistId: UUID?
 
     private var userDefaults: UserDefaults? {
         UserDefaults(suiteName: AppConstants.appGroupIdentifier)
@@ -42,6 +47,9 @@ class LiveActivityService {
             )
             currentActivity = activity
             print("Live Activity started: \(activity.id)")
+
+            // 状態監視を開始
+            startMonitoringActivityState(activity, checklistId: checklist.id)
         } catch {
             print("Failed to start Live Activity: \(error)")
         }
@@ -59,6 +67,10 @@ class LiveActivityService {
 
     /// 現在のLive Activityを終了
     func endCurrentActivity() {
+        // 状態監視をキャンセル
+        stateMonitoringTask?.cancel()
+        stateMonitoringTask = nil
+
         guard let activity = currentActivity else { return }
 
         Task {
@@ -72,6 +84,9 @@ class LiveActivityService {
         guard let activity = findActivity(for: checklistId.uuidString) else { return }
 
         if currentActivity?.id == activity.id {
+            // 状態監視をキャンセル
+            stateMonitoringTask?.cancel()
+            stateMonitoringTask = nil
             currentActivity = nil
         }
 
@@ -85,6 +100,9 @@ class LiveActivityService {
         guard let activity = findActivity(for: checklist.id.uuidString) else { return }
 
         if currentActivity?.id == activity.id {
+            // 状態監視をキャンセル
+            stateMonitoringTask?.cancel()
+            stateMonitoringTask = nil
             currentActivity = nil
         }
 
@@ -186,5 +204,47 @@ class LiveActivityService {
             totalCount: checklist.totalCount,
             items: Array(items)
         )
+    }
+
+    /// Live Activityの状態を監視
+    private func startMonitoringActivityState(_ activity: Activity<ChecklistActivityAttributes>, checklistId: UUID) {
+        // 既存の監視タスクをキャンセル
+        stateMonitoringTask?.cancel()
+
+        stateMonitoringTask = Task { [weak self] in
+            for await state in activity.activityStateUpdates {
+                guard !Task.isCancelled else { break }
+
+                switch state {
+                case .dismissed:
+                    // ユーザーがロック画面から消去した場合
+                    await MainActor.run {
+                        self?.currentActivity = nil
+                        self?.stateMonitoringTask = nil
+                        self?.dismissedChecklistId = checklistId
+                    }
+                    return
+
+                case .ended:
+                    // システムまたはアプリによって終了された場合
+                    await MainActor.run {
+                        self?.currentActivity = nil
+                        self?.stateMonitoringTask = nil
+                    }
+                    return
+
+                case .stale:
+                    // データが古くなった場合（必要に応じて更新）
+                    break
+
+                case .active:
+                    // アクティブ状態
+                    break
+
+                @unknown default:
+                    break
+                }
+            }
+        }
     }
 }
