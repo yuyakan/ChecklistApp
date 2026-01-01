@@ -15,26 +15,69 @@ class SpeechRecognitionService: ObservableObject {
     private var accumulatedText = ""
 
     init() {
-        requestPermissions()
+        // 権限リクエストは録音開始時に行う
     }
 
-    private func requestPermissions() {
-        SFSpeechRecognizer.requestAuthorization { _ in }
-        AVAudioSession.sharedInstance().requestRecordPermission { _ in }
+    private func requestPermissionsAndStartRecording() {
+        let speechStatus = SFSpeechRecognizer.authorizationStatus()
+
+        switch speechStatus {
+        case .notDetermined:
+            // 音声認識の権限をリクエスト
+            SFSpeechRecognizer.requestAuthorization { [weak self] status in
+                DispatchQueue.main.async {
+                    if status == .authorized {
+                        self?.requestMicrophoneAndStartRecording()
+                    } else {
+                        self?.errorMessage = "音声認識の権限が必要です"
+                    }
+                }
+            }
+        case .authorized:
+            requestMicrophoneAndStartRecording()
+        case .denied, .restricted:
+            DispatchQueue.main.async {
+                self.errorMessage = "音声認識の権限がありません。設定から許可してください。"
+            }
+        @unknown default:
+            break
+        }
+    }
+
+    private func requestMicrophoneAndStartRecording() {
+        let audioSession = AVAudioSession.sharedInstance()
+
+        switch audioSession.recordPermission {
+        case .undetermined:
+            audioSession.requestRecordPermission { [weak self] granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        self?.beginRecording()
+                    } else {
+                        self?.errorMessage = "マイクの権限が必要です"
+                    }
+                }
+            }
+        case .granted:
+            beginRecording()
+        case .denied:
+            DispatchQueue.main.async {
+                self.errorMessage = "マイクの権限がありません。設定から許可してください。"
+            }
+        @unknown default:
+            break
+        }
     }
 
     func startRecording() {
         // 既に録音中なら何もしない
         guard !isRecording else { return }
 
-        // 権限チェック
-        guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
-            DispatchQueue.main.async {
-                self.errorMessage = "音声認識の権限がありません"
-            }
-            return
-        }
+        // 権限確認とリクエスト
+        requestPermissionsAndStartRecording()
+    }
 
+    private func beginRecording() {
         guard let speechRecognizer = speechRecognizer, speechRecognizer.isAvailable else {
             DispatchQueue.main.async {
                 self.errorMessage = "音声認識が利用できません"
