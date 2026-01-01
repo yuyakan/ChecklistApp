@@ -404,6 +404,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ChecklistApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Checkly;
 				INFOPLIST_KEY_NSCameraUsageDescription = "写真からチェックリストを作成するためにカメラを使用します";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声からチェックリストを作成するためにマイクを使用します";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "写真からチェックリストを作成するためにフォトライブラリにアクセスします";
@@ -443,6 +444,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ChecklistApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Checkly;
 				INFOPLIST_KEY_NSCameraUsageDescription = "写真からチェックリストを作成するためにカメラを使用します";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声からチェックリストを作成するためにマイクを使用します";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "写真からチェックリストを作成するためにフォトライブラリにアクセスします";
