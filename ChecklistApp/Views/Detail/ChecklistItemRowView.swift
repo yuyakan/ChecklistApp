@@ -25,6 +25,7 @@ struct ChecklistItemRowView: View {
                     .fontWeight(item.isCompleted ? .regular : .medium)
                     .strikethrough(item.isCompleted, color: Color.neumorphicTextTertiary)
                     .foregroundStyle(item.isCompleted ? Color.neumorphicTextTertiary : Color.neumorphicTextPrimary)
+                    .animation(nil, value: item.isCompleted)
 
                 if let note = item.note, !note.isEmpty {
                     Text(note)

@@ -76,6 +76,7 @@ struct NeumorphicSegmentButton: View {
                 }
             )
             .foregroundStyle(isSelected ? Color.accentOrangeStart : Color.neumorphicTextSecondary)
+            .animation(nil, value: isSelected)
         }
         .buttonStyle(.plain)
     }
