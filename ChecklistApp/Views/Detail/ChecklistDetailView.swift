@@ -297,8 +297,8 @@ struct ChecklistDetailView: View {
             VStack(spacing: NeumorphicSpacing.sm) {
                 infoRow(label: "カテゴリ", value: checklist.category.description, icon: checklist.category.icon)
                 infoRow(label: "作成方法", value: checklist.inputSource.description, icon: checklist.inputSource.icon)
-                infoRow(label: "作成日", value: checklist.createdAt.formatted(date: .abbreviated, time: .shortened), icon: "calendar")
-                infoRow(label: "更新日", value: checklist.updatedAt.formatted(date: .abbreviated, time: .shortened), icon: "clock")
+                infoRow(label: "作成日", value: checklist.createdAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "calendar")
+                infoRow(label: "更新日", value: checklist.updatedAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "clock")
             }
             .padding(.horizontal, NeumorphicSpacing.md)
             .padding(.bottom, NeumorphicSpacing.md)

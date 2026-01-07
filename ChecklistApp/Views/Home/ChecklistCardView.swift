@@ -122,7 +122,7 @@ struct ChecklistCardView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption2)
-                    Text(checklist.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                    Text(checklist.updatedAt.formatted(.dateTime.year().month(.defaultDigits).day()))
                         .font(.caption)
                 }
                 .foregroundStyle(Color.neumorphicTextTertiary)

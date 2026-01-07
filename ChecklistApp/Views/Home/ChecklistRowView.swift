@@ -48,7 +48,7 @@ struct ChecklistRowView: View {
                 Spacer()
 
                 // 更新日時
-                Text(checklist.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                Text(checklist.updatedAt.formatted(.dateTime.year().month(.defaultDigits).day()))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
