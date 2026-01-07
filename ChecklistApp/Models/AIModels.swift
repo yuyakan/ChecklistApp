@@ -40,7 +40,7 @@ struct GeneratedChecklistItem {
     @Guide(description: "項目の補足説明（任意）")
     var note: String?
 
-    @Guide(description: "優先度: high, medium, low のいずれか")
+    @Guide(description: "優先度: high, medium, low, none のいずれか。判断できない場合はnone")
     var priority: String
 }
 
@@ -59,8 +59,11 @@ extension ChecklistGeneration {
 }
 
 extension GeneratedChecklistItem {
-    func toPriority() -> Priority {
-        Priority(rawValue: priority) ?? .medium
+    func toPriority() -> Priority? {
+        if priority == "none" {
+            return nil
+        }
+        return Priority(rawValue: priority)
     }
 
     func toChecklistItemModel(order: Int) -> ChecklistItemModel {

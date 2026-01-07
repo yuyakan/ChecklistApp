@@ -99,7 +99,6 @@ class ChecklistAIService: ObservableObject {
 
         要件:
         - 一般的に必要とされる項目を網羅的にリストアップしてください
-        - 各項目には適切な優先度（high, medium, low）を設定してください
         - 重要な項目には補足説明を追加してください
         - 実践的で役立つアドバイスをtipsとして提供してください
         - 適切なカテゴリを選択してください（shopping, task, procedure, travel, cooking, other）
@@ -109,6 +108,10 @@ class ChecklistAIService: ObservableObject {
           例: ○「りんご」「牛乳」「パスポート」 ×「りんごを買う」「牛乳を購入する」
         - 手順・作業・タスクなど「動作」を列挙する場合のみ、動詞を含めた文で記載してください
           例: ○「予約を確認する」「書類を提出する」
+
+        優先度について（重要）:
+        - 優先度は high, medium, low, none の4種類です
+        - 買い物リスト・材料リスト・持ち物リストなど、項目間に明確な優先順位がない場合は全て none にしてください
         """
 
         do {

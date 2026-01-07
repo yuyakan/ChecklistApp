@@ -4,6 +4,7 @@ import SwiftData
 
 struct ChecklistDetailView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: ChecklistDetailViewModel
     @State private var showingShareSheet = false
 
@@ -59,6 +60,7 @@ struct ChecklistDetailView: View {
 
                     Button(role: .destructive) {
                         modelContext.delete(checklist)
+                        dismiss()
                     } label: {
                         Label("削除", systemImage: "trash")
                     }
