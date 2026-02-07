@@ -12,6 +12,9 @@ struct SettingsView: View {
 
                 ScrollView {
                     VStack(spacing: NeumorphicSpacing.md) {
+                        // CloudKit Sharing section
+                        cloudKitCard
+
                         // Appearance section
                         appearanceCard
 
@@ -36,6 +39,46 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private var cloudKitCard: some View {
+        VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
+            Label("iCloud共有", systemImage: "icloud.fill")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.neumorphicTextPrimary)
+
+            NavigationLink {
+                SharedChecklistsView()
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: NeumorphicSpacing.xxs) {
+                        Text("共有されたリスト")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.neumorphicTextPrimary)
+                        Text("他のユーザーから共有されたチェックリストを表示")
+                            .font(.caption)
+                            .foregroundStyle(Color.neumorphicTextTertiary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.neumorphicTextTertiary)
+                }
+                .padding(.vertical, NeumorphicSpacing.xs)
+            }
+            .buttonStyle(.plain)
+
+            Text("チェックリストを他のiCloudユーザーと共有できます。詳細画面のメニューから「CloudKitで共有」を選択してください。")
+                .font(.caption)
+                .foregroundStyle(Color.neumorphicTextTertiary)
+        }
+        .padding(NeumorphicSpacing.md)
+        .background(Color.neumorphicSurface)
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+        .neumorphicShadow()
     }
 
     private var appearanceCard: some View {

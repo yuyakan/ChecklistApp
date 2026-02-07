@@ -44,6 +44,18 @@ struct ChecklistCardView: View {
 
                 Spacer()
 
+                // Share status badge
+                if checklist.isShared {
+                    Image(systemName: "person.2.fill")
+                        .font(.caption)
+                        .foregroundStyle(Color.accentOrangeStart)
+                        .padding(NeumorphicSpacing.xs)
+                        .background(
+                            Circle()
+                                .fill(Color.accentOrangeStart.opacity(0.15))
+                        )
+                }
+
                 // Input source badge
                 Image(systemName: checklist.inputSource.icon)
                     .font(.caption)

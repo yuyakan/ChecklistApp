@@ -1,14 +1,20 @@
 import SwiftUI
 import UIKit
 import SwiftData
+import CloudKit
 
 struct ChecklistDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: ChecklistDetailViewModel
     @State private var showingShareSheet = false
+    @State private var showingCloudKitShare = false
+    @State private var cloudKitShare: CKShare?
+    @State private var showingCloudKitError = false
+    @State private var cloudKitErrorMessage = ""
 
     let checklist: Checklist
+    private let sharingService = CloudKitSharingService.shared
 
     init(checklist: Checklist) {
         self.checklist = checklist
@@ -53,7 +59,18 @@ struct ChecklistDetailView: View {
                     Button {
                         showingShareSheet = true
                     } label: {
-                        Label("共有", systemImage: "square.and.arrow.up")
+                        Label("テキストで共有", systemImage: "square.and.arrow.up")
+                    }
+
+                    Button {
+                        Task {
+                            await shareWithCloudKit()
+                        }
+                    } label: {
+                        Label(
+                            checklist.isShared ? "共有中" : "CloudKitで共有",
+                            systemImage: checklist.isShared ? "person.2.fill" : "person.badge.plus"
+                        )
                     }
 
                     Divider()
@@ -85,8 +102,31 @@ struct ChecklistDetailView: View {
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(text: viewModel.shareText())
         }
+        .sheet(isPresented: $showingCloudKitShare) {
+            if let share = cloudKitShare {
+                ShareLinkView(checklist: checklist, share: share)
+            }
+        }
+        .alert("エラー", isPresented: $showingCloudKitError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(cloudKitErrorMessage)
+        }
         .onAppear {
             viewModel.refreshLiveActivityState()
+        }
+    }
+
+    // MARK: - CloudKit Sharing
+
+    private func shareWithCloudKit() async {
+        do {
+            let share = try await sharingService.createShare(for: checklist, in: modelContext)
+            cloudKitShare = share
+            showingCloudKitShare = true
+        } catch {
+            cloudKitErrorMessage = error.localizedDescription
+            showingCloudKitError = true
         }
     }
 
@@ -299,6 +339,9 @@ struct ChecklistDetailView: View {
                 infoRow(label: "作成方法", value: checklist.inputSource.description, icon: checklist.inputSource.icon)
                 infoRow(label: "作成日", value: checklist.createdAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "calendar")
                 infoRow(label: "更新日", value: checklist.updatedAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "clock")
+                if checklist.isShared {
+                    infoRow(label: "共有状態", value: "共有中", icon: "person.2.fill")
+                }
             }
             .padding(.horizontal, NeumorphicSpacing.md)
             .padding(.bottom, NeumorphicSpacing.md)
@@ -484,18 +527,6 @@ struct NeumorphicPriorityButton: View {
         .buttonStyle(.plain)
         .neumorphicShadow(isPressed: !isSelected, subtle: true)
     }
-}
-
-// MARK: - Share Sheet
-
-struct ShareSheet: UIViewControllerRepresentable {
-    let text: String
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: [text], applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {

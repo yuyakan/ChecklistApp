@@ -2,16 +2,20 @@ import SwiftUI
 import SwiftData
 import WidgetKit
 import Combine
+import CloudKit
 
 // MARK: - Navigation State
 
 @MainActor
 class NavigationState: ObservableObject {
     @Published var selectedChecklistId: UUID?
+    @Published var showingSharedChecklists: Bool = false
+    @Published var pendingShareMetadata: CKShare.Metadata?
 }
 
 @main
 struct ChecklistApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var navigationState = NavigationState()
     var sharedModelContainer: ModelContainer = AppGroupContainer.modelContainer
@@ -28,6 +32,10 @@ struct ChecklistApp: App {
                 .onOpenURL { url in
                     handleDeepLink(url: url)
                 }
+                .task {
+                    // CloudKit共有の受け入れを監視
+                    await setupCloudKitShareHandler()
+                }
         }
         .modelContainer(sharedModelContainer)
         .onChange(of: scenePhase) { _, newPhase in
@@ -35,6 +43,40 @@ struct ChecklistApp: App {
                 let context = ModelContext(sharedModelContainer)
                 LiveActivityService.shared.checkPendingUpdates(with: context)
             }
+        }
+    }
+
+    private func setupCloudKitShareHandler() async {
+        // CKShareメタデータの処理をセットアップ
+        let container = CKContainer(identifier: "iCloud.com.kanbe1365.ChecklistApp")
+
+        // 共有招待の通知を監視
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("CKShareAccepted"),
+            object: nil,
+            queue: .main
+        ) { notification in
+            if let metadata = notification.userInfo?["metadata"] as? CKShare.Metadata {
+                Task { @MainActor in
+                    await acceptShare(metadata: metadata)
+                }
+            }
+        }
+    }
+
+    private func acceptShare(metadata: CKShare.Metadata) async {
+        let service = CloudKitSharingService.shared
+
+        do {
+            try await service.acceptShare(metadata: metadata)
+            print("共有を受け入れました")
+
+            // 共有されたリスト画面を表示
+            await MainActor.run {
+                navigationState.showingSharedChecklists = true
+            }
+        } catch {
+            print("共有の受け入れに失敗: \(error)")
         }
     }
 

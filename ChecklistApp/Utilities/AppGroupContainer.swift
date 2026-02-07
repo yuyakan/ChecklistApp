@@ -23,16 +23,23 @@ enum AppGroupContainer {
 
         // App Groupsが設定されている場合は共有コンテナを使用
         // 設定されていない場合はデフォルトの場所を使用
+        // CloudKitエンタイトルメントがあってもSwiftDataの自動同期は無効化
+        // （CloudKit共有はCKShare APIで直接行うため）
         let modelConfiguration: ModelConfiguration
         if let containerURL = containerURL {
             modelConfiguration = ModelConfiguration(
                 schema: schema,
                 url: containerURL.appendingPathComponent("ChecklistApp.store"),
-                allowsSave: true
+                allowsSave: true,
+                cloudKitDatabase: .none
             )
         } else {
             // App Groupsが未設定の場合はデフォルト設定
-            modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            modelConfiguration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                cloudKitDatabase: .none
+            )
         }
 
         do {

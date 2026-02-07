@@ -1,17 +1,21 @@
 import Foundation
 import SwiftData
- import SwiftUI
+import SwiftUI
 
 @Model
 class Checklist {
-    var id: UUID
-    var title: String
-    var categoryRaw: String
+    var id: UUID = UUID()
+    var title: String = ""
+    var categoryRaw: String = Category.other.rawValue
     @Relationship(deleteRule: .cascade, inverse: \ChecklistItemModel.checklist)
-    var items: [ChecklistItemModel]
-    var createdAt: Date
-    var updatedAt: Date
-    var inputSourceRaw: String
+    var items: [ChecklistItemModel] = []
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
+    var inputSourceRaw: String = InputSource.text.rawValue
+
+    // CloudKit共有用プロパティ
+    var isShared: Bool = false
+    var ownerName: String = ""
 
     var category: Category {
         get {

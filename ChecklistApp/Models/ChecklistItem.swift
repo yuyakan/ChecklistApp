@@ -3,12 +3,12 @@ import SwiftData
 
 @Model
 class ChecklistItemModel {
-    var id: UUID
-    var name: String
-    var note: String?
-    var isCompleted: Bool
-    var priorityRaw: String
-    var order: Int
+    var id: UUID = UUID()
+    var name: String = ""
+    var note: String? = nil
+    var isCompleted: Bool = false
+    var priorityRaw: String = ""
+    var order: Int = 0
 
     var checklist: Checklist?
 
