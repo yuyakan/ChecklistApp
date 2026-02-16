@@ -47,9 +47,6 @@ struct ChecklistApp: App {
     }
 
     private func setupCloudKitShareHandler() async {
-        // CKShareメタデータの処理をセットアップ
-        let container = CKContainer(identifier: "iCloud.com.kanbe1365.ChecklistApp")
-
         // 共有招待の通知を監視
         NotificationCenter.default.addObserver(
             forName: NSNotification.Name("CKShareAccepted"),

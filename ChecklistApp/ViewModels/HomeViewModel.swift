@@ -33,8 +33,14 @@ class HomeViewModel: ObservableObject {
 
     func deleteChecklists(at offsets: IndexSet, from checklists: [Checklist], modelContext: ModelContext) {
         let filteredList = filteredChecklists(checklists)
+        let sharingService = CloudKitSharingService.shared
         for index in offsets {
             let checklist = filteredList[index]
+            if checklist.isShared {
+                Task {
+                    try? await sharingService.deleteSharedRecords(for: checklist)
+                }
+            }
             modelContext.delete(checklist)
         }
         // 明示的に保存してからWidgetを更新

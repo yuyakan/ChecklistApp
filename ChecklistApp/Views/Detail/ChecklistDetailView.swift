@@ -8,8 +8,6 @@ struct ChecklistDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: ChecklistDetailViewModel
     @State private var showingShareSheet = false
-    @State private var showingCloudKitShare = false
-    @State private var cloudKitShare: CKShare?
     @State private var showingCloudKitError = false
     @State private var cloudKitErrorMessage = ""
 
@@ -76,8 +74,14 @@ struct ChecklistDetailView: View {
                     Divider()
 
                     Button(role: .destructive) {
-                        modelContext.delete(checklist)
-                        dismiss()
+                        Task {
+                            if checklist.isShared {
+                                try? await sharingService.deleteSharedRecords(for: checklist)
+                            }
+                            modelContext.delete(checklist)
+                            try? modelContext.save()
+                            dismiss()
+                        }
                     } label: {
                         Label("削除", systemImage: "trash")
                     }
@@ -102,11 +106,6 @@ struct ChecklistDetailView: View {
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(text: viewModel.shareText())
         }
-        .sheet(isPresented: $showingCloudKitShare) {
-            if let share = cloudKitShare {
-                ShareLinkView(checklist: checklist, share: share)
-            }
-        }
         .alert("エラー", isPresented: $showingCloudKitError) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -122,8 +121,15 @@ struct ChecklistDetailView: View {
     private func shareWithCloudKit() async {
         do {
             let share = try await sharingService.createShare(for: checklist, in: modelContext)
-            cloudKitShare = share
-            showingCloudKitShare = true
+            CloudKitSharingPresenter.present(
+                share: share,
+                container: CKContainer(identifier: "iCloud.com.kanbe1365.ChecklistApp"),
+                checklist: checklist,
+                onStopSharing: {
+                    checklist.isShared = false
+                    try? modelContext.save()
+                }
+            )
         } catch {
             cloudKitErrorMessage = error.localizedDescription
             showingCloudKitError = true

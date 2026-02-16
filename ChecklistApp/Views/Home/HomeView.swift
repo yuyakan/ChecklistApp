@@ -166,6 +166,11 @@ struct HomeView: View {
     // MARK: - Actions
 
     private func deleteChecklist(_ checklist: Checklist) {
+        if checklist.isShared {
+            Task {
+                try? await CloudKitSharingService.shared.deleteSharedRecords(for: checklist)
+            }
+        }
         modelContext.delete(checklist)
         try? modelContext.save()
         WidgetKit.WidgetCenter.shared.reloadAllTimelines()
