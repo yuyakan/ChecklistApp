@@ -24,15 +24,23 @@ struct HomeView: View {
                     checklistScrollView
                 }
 
-                // Neumorphic FAB
-                VStack {
-                    Spacer()
-                    HStack {
+                if viewModel.isSelecting {
+                    // Selection mode bottom bar
+                    VStack {
                         Spacer()
-                        NeumorphicFAB {
-                            viewModel.showingCreateSheet = true
+                        selectionBottomBar
+                    }
+                } else {
+                    // Neumorphic FAB
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            NeumorphicFAB {
+                                viewModel.showingCreateSheet = true
+                            }
+                            .padding(NeumorphicSpacing.lg)
                         }
-                        .padding(NeumorphicSpacing.lg)
                     }
                 }
             }
@@ -60,11 +68,32 @@ struct HomeView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.showingSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .foregroundStyle(Color.neumorphicTextSecondary)
+                    HStack(spacing: NeumorphicSpacing.sm) {
+                        if viewModel.isSelecting {
+                            Button {
+                                viewModel.exitSelectionMode()
+                            } label: {
+                                Text("キャンセル")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.neumorphicTextSecondary)
+                            }
+                        } else {
+                            if !checklists.isEmpty {
+                                Button {
+                                    viewModel.isSelecting = true
+                                } label: {
+                                    Image(systemName: "trash.circle")
+                                        .foregroundStyle(Color.neumorphicTextSecondary)
+                                }
+                            }
+
+                            Button {
+                                viewModel.showingSettings = true
+                            } label: {
+                                Image(systemName: "gearshape")
+                                    .foregroundStyle(Color.neumorphicTextSecondary)
+                            }
+                        }
                     }
                 }
             }
@@ -73,6 +102,14 @@ struct HomeView: View {
             }
             .sheet(isPresented: $viewModel.showingSettings) {
                 SettingsView()
+            }
+            .alert("チェックリストを削除", isPresented: $viewModel.showingDeleteConfirmation) {
+                Button("削除", role: .destructive) {
+                    viewModel.deleteSelectedChecklists(from: Array(checklists), context: viewContext)
+                }
+                Button("キャンセル", role: .cancel) {}
+            } message: {
+                Text("\(viewModel.selectedChecklistIDs.count)件のチェックリストを削除しますか？この操作は取り消せません。")
             }
             .navigationDestination(for: NSManagedObjectID.self) { objectID in
                 if let checklist = viewContext.object(with: objectID) as? CDChecklist {
@@ -144,15 +181,30 @@ struct HomeView: View {
             } else {
                 LazyVStack(spacing: NeumorphicSpacing.md) {
                     ForEach(filtered, id: \.objectID) { checklist in
-                        NavigationLink(value: checklist.objectID) {
-                            ChecklistCardView(checklist: checklist)
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                deleteChecklist(checklist)
+                        if viewModel.isSelecting {
+                            Button {
+                                viewModel.toggleSelection(checklist)
                             } label: {
-                                Label("削除", systemImage: "trash")
+                                HStack(spacing: NeumorphicSpacing.sm) {
+                                    Image(systemName: viewModel.selectedChecklistIDs.contains(checklist.objectID) ? "checkmark.circle.fill" : "circle")
+                                        .font(.title3)
+                                        .foregroundStyle(viewModel.selectedChecklistIDs.contains(checklist.objectID) ? Color.accentOrangeStart : Color.neumorphicTextTertiary)
+
+                                    ChecklistCardView(checklist: checklist)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            NavigationLink(value: checklist.objectID) {
+                                ChecklistCardView(checklist: checklist)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    deleteChecklist(checklist)
+                                } label: {
+                                    Label("削除", systemImage: "trash")
+                                }
                             }
                         }
                     }
@@ -162,6 +214,47 @@ struct HomeView: View {
                 .padding(.bottom, 100) // Space for FAB
             }
         }
+    }
+
+    // MARK: - Selection Bottom Bar
+
+    private var selectionBottomBar: some View {
+        let count = viewModel.selectedChecklistIDs.count
+        let filtered = viewModel.filteredChecklists(Array(checklists))
+        let allSelected = !filtered.isEmpty && filtered.allSatisfy { viewModel.selectedChecklistIDs.contains($0.objectID) }
+
+        return HStack {
+            Button {
+                if allSelected {
+                    viewModel.selectedChecklistIDs.removeAll()
+                } else {
+                    viewModel.selectedChecklistIDs = Set(filtered.map { $0.objectID })
+                }
+            } label: {
+                Text(allSelected ? "すべて解除" : "すべて選択")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.accentOrangeStart)
+            }
+
+            Spacer()
+
+            Button {
+                viewModel.showingDeleteConfirmation = true
+            } label: {
+                Image(systemName: "trash")
+                    .font(.title3)
+                    .foregroundStyle(count > 0 ? Color.statusError : Color.neumorphicTextTertiary)
+            }
+            .disabled(count == 0)
+        }
+        .padding(.horizontal, NeumorphicSpacing.lg)
+        .padding(.vertical, NeumorphicSpacing.md)
+        .background(
+            Color.neumorphicSurface
+                .shadow(color: Color.neumorphicDarkShadow, radius: 8, x: 0, y: -4)
+                .ignoresSafeArea(edges: .bottom)
+        )
     }
 
     // MARK: - Actions

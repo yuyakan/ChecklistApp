@@ -11,6 +11,7 @@ struct ChecklistDetailView: View {
     @State private var showingShareSheet = false
     @State private var showingCloudKitError = false
     @State private var cloudKitErrorMessage = ""
+    @State private var showingDeleteSheet = false
 
     @ObservedObject var checklist: CDChecklist
 
@@ -100,6 +101,9 @@ struct ChecklistDetailView: View {
         }
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(text: viewModel.shareText())
+        }
+        .sheet(isPresented: $showingDeleteSheet) {
+            DeleteItemsSheet(viewModel: viewModel)
         }
         .alert("エラー", isPresented: $showingCloudKitError) {
             Button("OK", role: .cancel) {}
@@ -292,6 +296,17 @@ struct ChecklistDetailView: View {
                 Text("\(checklist.sortedItems.count)件")
                     .font(.subheadline)
                     .foregroundStyle(Color.neumorphicTextTertiary)
+
+                if !checklist.sortedItems.isEmpty {
+                    Button {
+                        viewModel.deselectAll()
+                        showingDeleteSheet = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.red.opacity(0.7))
+                    }
+                }
             }
             .padding(.horizontal, NeumorphicSpacing.md)
             .padding(.top, NeumorphicSpacing.md)
@@ -299,7 +314,7 @@ struct ChecklistDetailView: View {
             Divider()
                 .padding(.horizontal, NeumorphicSpacing.md)
 
-            ForEach(checklist.sortedItems, id: \.objectID) { item in
+            ForEach(Array(checklist.sortedItems), id: \.objectID) { (item: CDChecklistItem) in
                 ChecklistItemRowView(
                     item: item,
                     onToggle: {
@@ -498,6 +513,139 @@ struct AddItemSheet: View {
             }
         }
         .presentationDetents([.medium])
+    }
+}
+
+// MARK: - Delete Items Sheet
+
+struct DeleteItemsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var viewModel: ChecklistDetailViewModel
+    @State private var showingConfirmation = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.neumorphicBackground.ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    // Select all / deselect all
+                    HStack {
+                        let allSelected = viewModel.selectedItemIDs.count == viewModel.checklist.sortedItems.count
+                        Button(allSelected ? "全解除" : "全選択") {
+                            if allSelected {
+                                viewModel.deselectAll()
+                            } else {
+                                viewModel.selectAll()
+                            }
+                        }
+                        .font(.subheadline)
+
+                        Spacer()
+
+                        if !viewModel.selectedItemIDs.isEmpty {
+                            Text("\(viewModel.selectedItemIDs.count)件選択中")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.neumorphicTextTertiary)
+                        }
+                    }
+                    .padding(.horizontal, NeumorphicSpacing.md)
+                    .padding(.vertical, NeumorphicSpacing.sm)
+
+                    Divider()
+
+                    // Item list
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(viewModel.checklist.sortedItems), id: \.objectID) { (item: CDChecklistItem) in
+                                Button {
+                                    viewModel.toggleSelection(item)
+                                } label: {
+                                    HStack(spacing: NeumorphicSpacing.sm) {
+                                        Image(systemName: viewModel.selectedItemIDs.contains(item.objectID) ? "checkmark.square.fill" : "square")
+                                            .foregroundStyle(viewModel.selectedItemIDs.contains(item.objectID) ? Color.red : Color.neumorphicTextTertiary)
+                                            .font(.title3)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(item.wrappedName)
+                                                .foregroundStyle(Color.neumorphicTextPrimary)
+                                                .lineLimit(1)
+
+                                            if let note = item.note, !note.isEmpty {
+                                                Text(note)
+                                                    .font(.caption)
+                                                    .foregroundStyle(Color.neumorphicTextTertiary)
+                                                    .lineLimit(1)
+                                            }
+                                        }
+
+                                        Spacer()
+
+                                        if item.isCompleted {
+                                            Image(systemName: "checkmark")
+                                                .font(.caption)
+                                                .foregroundStyle(Color.neumorphicTextTertiary)
+                                        }
+                                    }
+                                    .padding(.horizontal, NeumorphicSpacing.md)
+                                    .padding(.vertical, NeumorphicSpacing.sm)
+                                }
+                                .buttonStyle(.plain)
+
+                                Divider()
+                                    .padding(.leading, NeumorphicSpacing.lg + NeumorphicSpacing.md)
+                            }
+                        }
+                    }
+
+                    // Delete button
+                    VStack {
+                        Divider()
+                        Button {
+                            showingConfirmation = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash")
+                                Text("削除（\(viewModel.selectedItemIDs.count)件）")
+                            }
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(NeumorphicSpacing.sm)
+                            .background(viewModel.selectedItemIDs.isEmpty ? Color.gray : Color.red)
+                            .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(viewModel.selectedItemIDs.isEmpty)
+                        .padding(.horizontal, NeumorphicSpacing.md)
+                        .padding(.vertical, NeumorphicSpacing.sm)
+                    }
+                    .background(Color.neumorphicBackground)
+                }
+            }
+            .navigationTitle("項目を削除")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") {
+                        viewModel.deselectAll()
+                        dismiss()
+                    }
+                    .foregroundStyle(Color.neumorphicTextSecondary)
+                }
+            }
+            .alert("確認", isPresented: $showingConfirmation) {
+                Button("削除", role: .destructive) {
+                    viewModel.deleteSelectedItems()
+                    dismiss()
+                }
+                Button("キャンセル", role: .cancel) {}
+            } message: {
+                Text("\(viewModel.selectedItemIDs.count)件のアイテムを削除しますか？")
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

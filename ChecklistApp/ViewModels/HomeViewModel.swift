@@ -10,6 +10,32 @@ class HomeViewModel: ObservableObject {
     @Published var selectedCategory: Category?
     @Published var showingCreateSheet = false
     @Published var showingSettings = false
+    @Published var isSelecting = false
+    @Published var selectedChecklistIDs: Set<NSManagedObjectID> = []
+    @Published var showingDeleteConfirmation = false
+
+    func toggleSelection(_ checklist: CDChecklist) {
+        if selectedChecklistIDs.contains(checklist.objectID) {
+            selectedChecklistIDs.remove(checklist.objectID)
+        } else {
+            selectedChecklistIDs.insert(checklist.objectID)
+        }
+    }
+
+    func exitSelectionMode() {
+        isSelecting = false
+        selectedChecklistIDs.removeAll()
+    }
+
+    func deleteSelectedChecklists(from checklists: [CDChecklist], context: NSManagedObjectContext) {
+        let toDelete = checklists.filter { selectedChecklistIDs.contains($0.objectID) }
+        for checklist in toDelete {
+            context.delete(checklist)
+        }
+        try? context.save()
+        WidgetCenter.shared.reloadAllTimelines()
+        exitSelectionMode()
+    }
 
     func filteredChecklists(_ checklists: [CDChecklist]) -> [CDChecklist] {
         var result = checklists

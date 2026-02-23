@@ -16,6 +16,9 @@ class ChecklistDetailViewModel: ObservableObject {
     @Published var itemNote = ""
     @Published var isLiveActivityActive = false
 
+    // Multi-select deletion
+    @Published var selectedItemIDs: Set<NSManagedObjectID> = []
+
     let checklist: CDChecklist
     private var cancellables = Set<AnyCancellable>()
 
@@ -112,6 +115,43 @@ class ChecklistDetailViewModel: ObservableObject {
         // Live Activityがアクティブなら更新
         if isLiveActivityActive {
             LiveActivityService.shared.updateActivity(for: checklist)
+        }
+    }
+
+    // MARK: - Multi-select operations
+
+    func toggleSelection(_ item: CDChecklistItem) {
+        if selectedItemIDs.contains(item.objectID) {
+            selectedItemIDs.remove(item.objectID)
+        } else {
+            selectedItemIDs.insert(item.objectID)
+        }
+    }
+
+    func selectAll() {
+        selectedItemIDs = Set(checklist.sortedItems.map(\.objectID))
+    }
+
+    func deselectAll() {
+        selectedItemIDs.removeAll()
+    }
+
+    func deleteSelectedItems() {
+        let itemsToDelete = checklist.sortedItems.filter { selectedItemIDs.contains($0.objectID) }
+        for item in itemsToDelete {
+            checklist.removeItem(item)
+        }
+        try? checklist.managedObjectContext?.save()
+        selectedItemIDs.removeAll()
+        reloadWidget()
+
+        if isLiveActivityActive {
+            if checklist.isCompleted {
+                LiveActivityService.shared.completeActivity(for: checklist)
+                isLiveActivityActive = false
+            } else {
+                LiveActivityService.shared.updateActivity(for: checklist)
+            }
         }
     }
 
