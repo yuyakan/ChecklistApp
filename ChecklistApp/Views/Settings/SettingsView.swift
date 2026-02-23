@@ -68,7 +68,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            Text("チェックリストを他のiCloudユーザーと共有できます。詳細画面のメニューから「CloudKitで共有」を選択してください。")
+            Text("チェックリストを他のiCloudユーザーと共有できます。詳細画面のメニューから「iCloudで共有」を選択してください。")
                 .font(.caption)
                 .foregroundStyle(Color.neumorphicTextTertiary)
         }

@@ -20,7 +20,7 @@ struct CloudKitShareButton: View {
             }
         } label: {
             Label(
-                checklist.isShared ? "共有中" : "CloudKitで共有",
+                checklist.isShared ? "共有中" : "iCloudで共有",
                 systemImage: checklist.isShared ? "person.2.fill" : "person.badge.plus"
             )
         }
