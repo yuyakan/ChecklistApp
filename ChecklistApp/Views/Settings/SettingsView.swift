@@ -20,9 +20,6 @@ struct SettingsView: View {
 
                         // Default settings section
                         defaultSettingsCard
-
-                        // About section
-                        aboutCard
                     }
                     .padding(NeumorphicSpacing.md)
                 }
@@ -168,38 +165,6 @@ struct SettingsView: View {
         .neumorphicShadow()
     }
 
-    private var aboutCard: some View {
-        VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
-            Label("このアプリについて", systemImage: "info.circle.fill")
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundStyle(Color.neumorphicTextPrimary)
-
-            VStack(spacing: NeumorphicSpacing.sm) {
-                aboutRow(label: "バージョン", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-                aboutRow(label: "ビルド", value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1")
-            }
-        }
-        .padding(NeumorphicSpacing.md)
-        .background(Color.neumorphicSurface)
-        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
-        .neumorphicShadow()
-    }
-
-    private func aboutRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(Color.neumorphicTextSecondary)
-
-            Spacer()
-
-            Text(value)
-                .font(.subheadline)
-                .foregroundStyle(Color.neumorphicTextPrimary)
-        }
-        .padding(.vertical, NeumorphicSpacing.xxs)
-    }
 }
 
 struct ThemeOptionButton: View {

@@ -109,9 +109,8 @@ class ChecklistAIService: ObservableObject {
         - 手順・作業・タスクなど「動作」を列挙する場合のみ、動詞を含めた文で記載してください
           例: ○「予約を確認する」「書類を提出する」
 
-        優先度について（重要）:
-        - 優先度は high, medium, low, none の4種類です
-        - 買い物リスト・材料リスト・持ち物リストなど、項目間に明確な優先順位がない場合は全て none にしてください
+        優先度について:
+        - 全ての項目の priority は必ず "none" にしてください
         """
 
         do {
@@ -129,7 +128,7 @@ class ChecklistAIService: ObservableObject {
             ChecklistDraft.ItemDraft(
                 name: itemName,
                 note: nil,
-                priority: .medium,
+                priority: nil,
                 order: index
             )
         }

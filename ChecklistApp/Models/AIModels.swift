@@ -40,7 +40,7 @@ struct GeneratedChecklistItem {
     @Guide(description: "項目の補足説明（任意）")
     var note: String?
 
-    @Guide(description: "優先度: high, medium, low, none のいずれか。判断できない場合はnone")
+    @Guide(description: "常に none を設定すること")
     var priority: String
 }
 
