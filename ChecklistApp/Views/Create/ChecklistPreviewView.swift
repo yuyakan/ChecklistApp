@@ -11,6 +11,8 @@ struct ChecklistPreviewView: View {
     @State private var editingItemName: String = ""
     @State private var editingItemNote: String = ""
     @State private var editingItemPriority: Priority? = .medium
+    @State private var showingDeleteSheet = false
+    @State private var selectedDeleteIDs: Set<UUID> = []
 
     init(draft: ChecklistDraft, onSave: @escaping (ChecklistDraft) -> Void) {
         self._draft = State(initialValue: draft)
@@ -43,6 +45,16 @@ struct ChecklistPreviewView: View {
             .navigationTitle("プレビュー")
             .sheet(item: $editingItemIndex) { index in
                 itemEditSheet(index)
+            }
+            .sheet(isPresented: $showingDeleteSheet) {
+                PreviewDeleteItemsSheet(
+                    items: draft.items,
+                    selectedIDs: $selectedDeleteIDs,
+                    onDelete: {
+                        draft.items.removeAll { selectedDeleteIDs.contains($0.id) }
+                        selectedDeleteIDs.removeAll()
+                    }
+                )
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -128,6 +140,17 @@ struct ChecklistPreviewView: View {
                 Text("\(draft.items.count)件")
                     .font(.subheadline)
                     .foregroundStyle(Color.neumorphicTextTertiary)
+
+                if draft.items.count > 1 {
+                    Button {
+                        selectedDeleteIDs.removeAll()
+                        showingDeleteSheet = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.red.opacity(0.7))
+                    }
+                }
             }
             .padding(.horizontal, NeumorphicSpacing.md)
             .padding(.top, NeumorphicSpacing.md)
@@ -316,6 +339,145 @@ struct ChecklistPreviewView: View {
 // Make Int conform to Identifiable for sheet(item:)
 extension Int: @retroactive Identifiable {
     public var id: Int { self }
+}
+
+// MARK: - Preview Delete Items Sheet
+
+struct PreviewDeleteItemsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let items: [ChecklistDraft.ItemDraft]
+    @Binding var selectedIDs: Set<UUID>
+    let onDelete: () -> Void
+    @State private var showingConfirmation = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.neumorphicBackground.ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    // Select all / deselect all
+                    HStack {
+                        let allSelected = selectedIDs.count == items.count
+                        Button(allSelected ? "全解除" : "全選択") {
+                            if allSelected {
+                                selectedIDs.removeAll()
+                            } else {
+                                selectedIDs = Set(items.map(\.id))
+                            }
+                        }
+                        .font(.subheadline)
+
+                        Spacer()
+
+                        if !selectedIDs.isEmpty {
+                            Text("\(selectedIDs.count)件選択中")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.neumorphicTextTertiary)
+                        }
+                    }
+                    .padding(.horizontal, NeumorphicSpacing.md)
+                    .padding(.vertical, NeumorphicSpacing.sm)
+
+                    Divider()
+
+                    // Item list
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(items) { item in
+                                Button {
+                                    if selectedIDs.contains(item.id) {
+                                        selectedIDs.remove(item.id)
+                                    } else {
+                                        selectedIDs.insert(item.id)
+                                    }
+                                } label: {
+                                    HStack(spacing: NeumorphicSpacing.sm) {
+                                        Image(systemName: selectedIDs.contains(item.id) ? "checkmark.square.fill" : "square")
+                                            .foregroundStyle(selectedIDs.contains(item.id) ? Color.red : Color.neumorphicTextTertiary)
+                                            .font(.title3)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(item.name)
+                                                .foregroundStyle(Color.neumorphicTextPrimary)
+                                                .lineLimit(1)
+
+                                            if let note = item.note, !note.isEmpty {
+                                                Text(note)
+                                                    .font(.caption)
+                                                    .foregroundStyle(Color.neumorphicTextTertiary)
+                                                    .lineLimit(1)
+                                            }
+                                        }
+
+                                        Spacer()
+
+                                        if let priority = item.priority {
+                                            Text(priority.description)
+                                                .font(.caption)
+                                                .foregroundStyle(Color.neumorphicTextTertiary)
+                                        }
+                                    }
+                                    .padding(.horizontal, NeumorphicSpacing.md)
+                                    .padding(.vertical, NeumorphicSpacing.sm)
+                                }
+                                .buttonStyle(.plain)
+
+                                Divider()
+                                    .padding(.leading, NeumorphicSpacing.lg + NeumorphicSpacing.md)
+                            }
+                        }
+                    }
+
+                    // Delete button
+                    VStack {
+                        Divider()
+                        Button {
+                            showingConfirmation = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash")
+                                Text("削除（\(selectedIDs.count)件）")
+                            }
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(NeumorphicSpacing.sm)
+                            .background(selectedIDs.isEmpty ? Color.gray : Color.red)
+                            .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(selectedIDs.isEmpty)
+                        .padding(.horizontal, NeumorphicSpacing.md)
+                        .padding(.vertical, NeumorphicSpacing.sm)
+                    }
+                    .background(Color.neumorphicBackground)
+                }
+            }
+            .navigationTitle("項目を削除")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") {
+                        selectedIDs.removeAll()
+                        dismiss()
+                    }
+                    .foregroundStyle(Color.neumorphicTextSecondary)
+                }
+            }
+            .alert("確認", isPresented: $showingConfirmation) {
+                Button("削除", role: .destructive) {
+                    onDelete()
+                    dismiss()
+                }
+                Button("キャンセル", role: .cancel) {}
+            } message: {
+                Text("\(selectedIDs.count)件のアイテムを削除しますか？")
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
 }
 
 struct CategoryChipButton: View {
