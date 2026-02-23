@@ -61,13 +61,15 @@ class CoreDataStack: ObservableObject {
         container.viewContext.name = "viewContext"
         container.viewContext.transactionAuthor = "app"
 
-        // Initialize CloudKit schema (required to push schema to CloudKit Dashboard)
+        // Initialize CloudKit schema (Development only - pushes schema to CloudKit Dashboard)
+        #if DEBUG
         do {
             try container.initializeCloudKitSchema(options: [])
             logger.info("CloudKit schema initialized successfully")
         } catch {
             logger.error("CloudKit schema initialization error: \(error.localizedDescription)")
         }
+        #endif
 
         // Observe remote changes
         NotificationCenter.default.addObserver(
