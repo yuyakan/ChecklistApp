@@ -1,11 +1,14 @@
 import SwiftUI
-import SwiftData
+import CoreData
 import WidgetKit
 
 struct HomeView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var navigationState: NavigationState
-    @Query(sort: \Checklist.updatedAt, order: .reverse) private var checklists: [Checklist]
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \CDChecklist.updatedAt, ascending: false)],
+        animation: .default
+    ) private var checklists: FetchedResults<CDChecklist>
     @StateObject private var viewModel = HomeViewModel()
     @State private var navigationPath = NavigationPath()
 
@@ -39,20 +42,16 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
-                        Button {
-                            viewModel.selectedCategory = nil
-                        } label: {
-                            Label("すべて", systemImage: viewModel.selectedCategory == nil ? "checkmark" : "")
-                        }
+                        Picker(selection: $viewModel.selectedCategory) {
+                            Text("すべて").tag(Category?.none)
 
-                        Divider()
+                            Divider()
 
-                        ForEach(Category.allCases, id: \.self) { category in
-                            Button {
-                                viewModel.selectedCategory = category
-                            } label: {
-                                Label(category.description, systemImage: viewModel.selectedCategory == category ? "checkmark" : "")
+                            ForEach(Category.allCases, id: \.self) { category in
+                                Text(category.description).tag(Category?.some(category))
                             }
+                        } label: {
+                            EmptyView()
                         }
                     } label: {
                         Image(systemName: viewModel.selectedCategory != nil ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
@@ -75,13 +74,15 @@ struct HomeView: View {
             .sheet(isPresented: $viewModel.showingSettings) {
                 SettingsView()
             }
-            .navigationDestination(for: Checklist.self) { checklist in
-                ChecklistDetailView(checklist: checklist)
+            .navigationDestination(for: NSManagedObjectID.self) { objectID in
+                if let checklist = viewContext.object(with: objectID) as? CDChecklist {
+                    ChecklistDetailView(checklist: checklist)
+                }
             }
             .onChange(of: navigationState.selectedChecklistId) { _, newId in
                 if let checklistId = newId,
-                   let checklist = checklists.first(where: { $0.id == checklistId }) {
-                    navigationPath.append(checklist)
+                   let checklist = checklists.first(where: { $0.wrappedId == checklistId }) {
+                    navigationPath.append(checklist.objectID)
                     navigationState.selectedChecklistId = nil
                 }
             }
@@ -121,7 +122,7 @@ struct HomeView: View {
 
     private var checklistScrollView: some View {
         ScrollView {
-            let filtered = viewModel.filteredChecklists(checklists)
+            let filtered = viewModel.filteredChecklists(Array(checklists))
 
             if filtered.isEmpty {
                 // Empty search result
@@ -142,8 +143,8 @@ struct HomeView: View {
                 .padding(.top, 100)
             } else {
                 LazyVStack(spacing: NeumorphicSpacing.md) {
-                    ForEach(Array(filtered.enumerated()), id: \.element.id) { index, checklist in
-                        NavigationLink(value: checklist) {
+                    ForEach(filtered, id: \.objectID) { checklist in
+                        NavigationLink(value: checklist.objectID) {
                             ChecklistCardView(checklist: checklist)
                         }
                         .buttonStyle(.plain)
@@ -165,20 +166,9 @@ struct HomeView: View {
 
     // MARK: - Actions
 
-    private func deleteChecklist(_ checklist: Checklist) {
-        if checklist.isShared {
-            Task {
-                try? await CloudKitSharingService.shared.deleteSharedRecords(for: checklist)
-            }
-        }
-        modelContext.delete(checklist)
-        try? modelContext.save()
+    private func deleteChecklist(_ checklist: CDChecklist) {
+        viewContext.delete(checklist)
+        try? viewContext.save()
         WidgetKit.WidgetCenter.shared.reloadAllTimelines()
     }
-}
-
-#Preview {
-    HomeView()
-        .environmentObject(NavigationState())
-        .modelContainer(for: Checklist.self, inMemory: true)
 }

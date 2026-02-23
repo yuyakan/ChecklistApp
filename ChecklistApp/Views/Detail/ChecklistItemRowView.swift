@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ChecklistItemRowView: View {
-    let item: ChecklistItemModel
+    @ObservedObject var item: CDChecklistItem
     let onToggle: () -> Void
     let onUpdate: (String, String?, Priority?) -> Void
     let onDelete: () -> Void
@@ -20,7 +20,7 @@ struct ChecklistItemRowView: View {
 
             // Content
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.name)
+                Text(item.wrappedName)
                     .font(.body)
                     .fontWeight(item.isCompleted ? .regular : .medium)
                     .strikethrough(item.isCompleted, color: Color.neumorphicTextTertiary)
@@ -217,51 +217,8 @@ struct ChecklistItemRowView: View {
     }
 
     private func prepareEditValues() {
-        editingName = item.name
+        editingName = item.wrappedName
         editingNote = item.note ?? ""
         editingPriority = item.priority
-    }
-}
-
-#Preview {
-    ZStack {
-        Color.neumorphicBackground.ignoresSafeArea()
-
-        VStack(spacing: 0) {
-            ChecklistItemRowView(
-                item: ChecklistItemModel(name: "牛乳を買う", note: "低脂肪のもの", isCompleted: false, priority: .high, order: 0),
-                onToggle: {},
-                onUpdate: { _, _, _ in },
-                onDelete: {}
-            )
-            .padding(.horizontal, NeumorphicSpacing.md)
-
-            Divider()
-                .padding(.horizontal, NeumorphicSpacing.lg)
-
-            ChecklistItemRowView(
-                item: ChecklistItemModel(name: "完了した項目", isCompleted: true, priority: .low, order: 1),
-                onToggle: {},
-                onUpdate: { _, _, _ in },
-                onDelete: {}
-            )
-            .padding(.horizontal, NeumorphicSpacing.md)
-
-            Divider()
-                .padding(.horizontal, NeumorphicSpacing.lg)
-
-            ChecklistItemRowView(
-                item: ChecklistItemModel(name: "中程度の優先度", isCompleted: false, priority: .medium, order: 2),
-                onToggle: {},
-                onUpdate: { _, _, _ in },
-                onDelete: {}
-            )
-            .padding(.horizontal, NeumorphicSpacing.md)
-        }
-        .padding(.vertical, NeumorphicSpacing.md)
-        .background(Color.neumorphicSurface)
-        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
-        .neumorphicShadow()
-        .padding()
     }
 }

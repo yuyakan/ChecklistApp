@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ChecklistCardView: View {
-    let checklist: Checklist
+    @ObservedObject var checklist: CDChecklist
 
     var body: some View {
         VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
@@ -31,7 +31,7 @@ struct ChecklistCardView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(checklist.title)
+                    Text(checklist.wrappedTitle)
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundStyle(Color.neumorphicTextPrimary)
@@ -134,7 +134,7 @@ struct ChecklistCardView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption2)
-                    Text(checklist.updatedAt.formatted(.dateTime.year().month(.defaultDigits).day()))
+                    Text(checklist.wrappedUpdatedAt.formatted(.dateTime.year().month(.defaultDigits).day()))
                         .font(.caption)
                 }
                 .foregroundStyle(Color.neumorphicTextTertiary)
@@ -159,52 +159,5 @@ struct ChecklistCardView: View {
 
     private var progressColor: Color {
         .progress(checklist.progress, isCompleted: checklist.isCompleted)
-    }
-}
-
-#Preview {
-    ZStack {
-        Color.neumorphicBackground.ignoresSafeArea()
-
-        VStack(spacing: NeumorphicSpacing.md) {
-            ChecklistCardView(
-                checklist: Checklist(
-                    title: "買い物リスト",
-                    category: .shopping,
-                    items: [
-                        ChecklistItemModel(name: "牛乳", isCompleted: true, order: 0),
-                        ChecklistItemModel(name: "卵", isCompleted: true, order: 1),
-                        ChecklistItemModel(name: "パン", isCompleted: false, order: 2),
-                        ChecklistItemModel(name: "バター", isCompleted: false, order: 3)
-                    ],
-                    inputSource: .aiGenerated
-                )
-            )
-
-            ChecklistCardView(
-                checklist: Checklist(
-                    title: "完了済みタスク",
-                    category: .task,
-                    items: [
-                        ChecklistItemModel(name: "Task 1", isCompleted: true, order: 0),
-                        ChecklistItemModel(name: "Task 2", isCompleted: true, order: 1)
-                    ],
-                    inputSource: .text
-                )
-            )
-
-            ChecklistCardView(
-                checklist: Checklist(
-                    title: "新規チェックリスト",
-                    category: .other,
-                    items: [
-                        ChecklistItemModel(name: "Item 1", isCompleted: false, order: 0),
-                        ChecklistItemModel(name: "Item 2", isCompleted: false, order: 1)
-                    ],
-                    inputSource: .voice
-                )
-            )
-        }
-        .padding()
     }
 }

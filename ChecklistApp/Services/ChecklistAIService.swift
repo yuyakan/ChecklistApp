@@ -1,6 +1,6 @@
 import Foundation
 import FoundationModels
- import Combine
+import Combine
 
 enum AIServiceError: LocalizedError {
     case sessionCreationFailed
@@ -122,20 +122,19 @@ class ChecklistAIService: ObservableObject {
         }
     }
 
-    // MARK: - チェックリストモデルへの変換
+    // MARK: - チェックリストDTOへの変換
 
-    func createChecklist(from extraction: ChecklistExtraction, source: InputSource) -> Checklist {
+    func createDraft(from extraction: ChecklistExtraction, source: InputSource) -> ChecklistDraft {
         let items = extraction.items.enumerated().map { index, itemName in
-            ChecklistItemModel(
+            ChecklistDraft.ItemDraft(
                 name: itemName,
                 note: nil,
-                isCompleted: false,
                 priority: .medium,
                 order: index
             )
         }
 
-        return Checklist(
+        return ChecklistDraft(
             title: extraction.suggestedTitle,
             category: extraction.toCategory(),
             items: items,
@@ -143,12 +142,12 @@ class ChecklistAIService: ObservableObject {
         )
     }
 
-    func createChecklist(from generation: ChecklistGeneration) -> Checklist {
+    func createDraft(from generation: ChecklistGeneration) -> ChecklistDraft {
         let items = generation.items.enumerated().map { index, item in
-            item.toChecklistItemModel(order: index)
+            item.toItemDraft(order: index)
         }
 
-        return Checklist(
+        return ChecklistDraft(
             title: generation.title,
             category: generation.toCategory(),
             items: items,

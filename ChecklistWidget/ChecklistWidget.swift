@@ -1,6 +1,6 @@
 import WidgetKit
 import SwiftUI
-import SwiftData
+import CoreData
 import AppIntents
 import ActivityKit
 
@@ -16,6 +16,8 @@ enum WidgetConstants {
 enum WidgetAppGroupContainer {
     static let appGroupIdentifier = WidgetConstants.appGroupIdentifier
     private static let currentIndexKey = "widget_current_checklist_index"
+    private static let privateStoreName = "ChecklistApp-private.sqlite"
+    private static let sharedStoreName = "ChecklistApp-shared.sqlite"
 
     static var containerURL: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
@@ -48,29 +50,43 @@ enum WidgetAppGroupContainer {
         userDefaults?.removeObject(forKey: WidgetConstants.liveActivityUpdateTimestampKey)
     }
 
-    static var modelContainer: ModelContainer? {
-        guard let containerURL = containerURL else {
+    // CoreData container for widget (no CloudKit sync - local read/write only)
+    static var persistentContainer: NSPersistentContainer? {
+        guard let appGroupURL = containerURL else {
             print("Widget: App Groups not configured")
             return nil
         }
 
-        let schema = Schema([
-            Checklist.self,
-            ChecklistItemModel.self,
-        ])
+        let container = NSPersistentContainer(name: "ChecklistApp")
 
-        let modelConfiguration = ModelConfiguration(
-            schema: schema,
-            url: containerURL.appendingPathComponent("ChecklistApp.store"),
-            allowsSave: true
-        )
+        // Private store
+        let privateStoreURL = appGroupURL.appendingPathComponent(privateStoreName)
+        let privateDescription = NSPersistentStoreDescription(url: privateStoreURL)
+        privateDescription.isReadOnly = false
 
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            print("Widget could not create ModelContainer: \(error)")
+        // Shared store
+        let sharedStoreURL = appGroupURL.appendingPathComponent(sharedStoreName)
+        let sharedDescription = NSPersistentStoreDescription(url: sharedStoreURL)
+        sharedDescription.isReadOnly = false
+
+        container.persistentStoreDescriptions = [privateDescription, sharedDescription]
+
+        var loadError: Error?
+        container.loadPersistentStores { description, error in
+            if let error = error {
+                print("Widget could not load store \(description.url?.lastPathComponent ?? "unknown"): \(error)")
+                loadError = error
+            }
+        }
+
+        if loadError != nil {
             return nil
         }
+
+        container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+
+        return container
     }
 }
 
@@ -130,21 +146,23 @@ struct ToggleItemIntent: AppIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        guard let container = WidgetAppGroupContainer.modelContainer else {
+        guard let container = WidgetAppGroupContainer.persistentContainer else {
             return .result()
         }
 
-        let context = ModelContext(container)
+        let context = container.viewContext
         guard let itemUUID = UUID(uuidString: itemId),
               let checklistUUID = UUID(uuidString: checklistId) else {
             return .result()
         }
 
-        let descriptor = FetchDescriptor<ChecklistItemModel>()
+        let fetchRequest: NSFetchRequest<CDChecklistItem> = CDChecklistItem.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", itemUUID as CVarArg)
+        fetchRequest.fetchLimit = 1
 
         do {
-            let items = try context.fetch(descriptor)
-            if let item = items.first(where: { $0.id == itemUUID }) {
+            let items = try context.fetch(fetchRequest)
+            if let item = items.first {
                 item.isCompleted.toggle()
                 item.checklist?.updatedAt = Date()
                 try context.save()
@@ -311,32 +329,31 @@ struct ChecklistTimelineProvider: TimelineProvider {
     }
 
     private func fetchIncompleteChecklists() -> [ChecklistWidgetData] {
-        guard let container = WidgetAppGroupContainer.modelContainer else {
+        guard let container = WidgetAppGroupContainer.persistentContainer else {
             return []
         }
 
-        let context = ModelContext(container)
-        let descriptor = FetchDescriptor<Checklist>(
-            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
-        )
+        let context = container.viewContext
+        let fetchRequest: NSFetchRequest<CDChecklist> = CDChecklist.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \CDChecklist.updatedAt, ascending: false)]
 
         do {
-            let checklists = try context.fetch(descriptor)
+            let checklists = try context.fetch(fetchRequest)
             // アイテムが0個、または未完了のアイテムがあるチェックリストを表示
             return checklists
                 .filter { $0.totalCount == 0 || !$0.isCompleted }
                 .map { checklist in
                     let items = checklist.sortedItems.map { item in
                         ChecklistItemWidgetData(
-                            id: item.id,
-                            name: item.name,
+                            id: item.wrappedId,
+                            name: item.wrappedName,
                             isCompleted: item.isCompleted,
-                            order: item.order
+                            order: Int(item.order)
                         )
                     }
                     return ChecklistWidgetData(
-                        id: checklist.id,
-                        title: checklist.title,
+                        id: checklist.wrappedId,
+                        title: checklist.wrappedTitle,
                         completedCount: checklist.completedCount,
                         totalCount: checklist.totalCount,
                         categoryIcon: checklist.category.icon,

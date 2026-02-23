@@ -1,21 +1,18 @@
 import SwiftUI
-import SwiftData
+import CoreData
 import CloudKit
 
 struct CloudKitShareButton: View {
-    @Environment(\.modelContext) private var modelContext
-    @State private var showingShareSheet = false
-    @State private var share: CKShare?
+    @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var coreDataStack: CoreDataStack
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var isLoading = false
 
-    let checklist: Checklist
-    private let sharingService = CloudKitSharingService.shared
+    @ObservedObject var checklist: CDChecklist
 
     var body: some View {
         Button {
-            print("CloudKit共有ボタンがタップされました")
             isLoading = true
             Task {
                 await shareChecklist()
@@ -27,24 +24,6 @@ struct CloudKitShareButton: View {
                 systemImage: checklist.isShared ? "person.2.fill" : "person.badge.plus"
             )
         }
-        .task {
-            await sharingService.checkAccountStatus()
-            print("iCloudアカウント状態: \(sharingService.accountStatus.rawValue), isAvailable: \(sharingService.isAvailable)")
-        }
-        .onChange(of: showingShareSheet) { _, newValue in
-            if newValue, let share = share {
-                CloudKitSharingPresenter.present(
-                    share: share,
-                    container: CKContainer(identifier: "iCloud.com.kanbe1365.ChecklistApp"),
-                    checklist: checklist,
-                    onStopSharing: {
-                        checklist.isShared = false
-                        try? modelContext.save()
-                    }
-                )
-                showingShareSheet = false
-            }
-        }
         .alert("エラー", isPresented: $showingError) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -53,26 +32,56 @@ struct CloudKitShareButton: View {
     }
 
     private func shareChecklist() async {
-        print("shareChecklist開始")
-
-        // アカウント状態を再確認
-        await sharingService.checkAccountStatus()
-
-        guard sharingService.isAvailable else {
-            print("iCloudが利用できません: \(sharingService.accountStatus.rawValue)")
-            errorMessage = "iCloudにサインインしてください"
-            showingError = true
-            return
-        }
+        let stack = coreDataStack
 
         do {
-            print("CKShare作成中...")
-            let newShare = try await sharingService.createShare(for: checklist, in: modelContext)
-            print("CKShare作成成功")
-            share = newShare
-            showingShareSheet = true
+            // Check iCloud availability
+            let status = try await stack.ckContainer.accountStatus()
+            guard status == .available else {
+                errorMessage = "iCloudにサインインしてください"
+                showingError = true
+                return
+            }
+
+            if stack.isShared(object: checklist) {
+                // Already shared - show existing share management
+                let shares = try stack.container.fetchShares(matching: [checklist.objectID])
+                if let existingShare = shares.values.first {
+                    await MainActor.run {
+                        CloudKitSharingPresenter.present(
+                            share: existingShare,
+                            container: stack.ckContainer,
+                            checklist: checklist,
+                            onStopSharing: {
+                                checklist.isShared = false
+                                try? viewContext.save()
+                            }
+                        )
+                    }
+                }
+            } else {
+                // New share
+                let (_, share, _) = try await stack.container.share(
+                    [checklist],
+                    to: nil
+                )
+                share[CKShare.SystemFieldKey.title] = checklist.wrappedTitle as CKRecordValue
+                checklist.isShared = true
+                try? viewContext.save()
+
+                await MainActor.run {
+                    CloudKitSharingPresenter.present(
+                        share: share,
+                        container: stack.ckContainer,
+                        checklist: checklist,
+                        onStopSharing: {
+                            checklist.isShared = false
+                            try? viewContext.save()
+                        }
+                    )
+                }
+            }
         } catch {
-            print("共有エラー: \(error)")
             errorMessage = error.localizedDescription
             showingError = true
         }
@@ -82,22 +91,28 @@ struct CloudKitShareButton: View {
 // MARK: - Shared Checklists View
 
 struct SharedChecklistsView: View {
-    @Environment(\.modelContext) private var modelContext
-    @StateObject private var sharingService = CloudKitSharingService.shared
-    @State private var sharedRecords: [CKRecord] = []
-    @State private var isLoading = false
-    @State private var showingError = false
-    @State private var errorMessage = ""
+    @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var coreDataStack: CoreDataStack
+
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \CDChecklist.updatedAt, ascending: false)],
+        animation: .default
+    )
+    private var allChecklists: FetchedResults<CDChecklist>
+
+    @State private var iCloudAvailable = true
+
+    private var sharedChecklists: [CDChecklist] {
+        allChecklists.filter { coreDataStack.isShared(object: $0) }
+    }
 
     var body: some View {
         ZStack {
             Color.neumorphicBackground.ignoresSafeArea()
 
-            if !sharingService.isAvailable {
+            if !iCloudAvailable {
                 notSignedInView
-            } else if isLoading {
-                ProgressView("共有リストを読み込み中...")
-            } else if sharedRecords.isEmpty {
+            } else if sharedChecklists.isEmpty {
                 emptyView
             } else {
                 sharedListView
@@ -106,15 +121,7 @@ struct SharedChecklistsView: View {
         .navigationTitle("共有されたリスト")
         .navigationBarTitleDisplayMode(.large)
         .task {
-            await fetchSharedChecklists()
-        }
-        .refreshable {
-            await fetchSharedChecklists()
-        }
-        .alert("エラー", isPresented: $showingError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(errorMessage)
+            await checkiCloudStatus()
         }
     }
 
@@ -157,34 +164,20 @@ struct SharedChecklistsView: View {
     private var sharedListView: some View {
         ScrollView {
             LazyVStack(spacing: NeumorphicSpacing.md) {
-                ForEach(sharedRecords, id: \.recordID) { record in
-                    SharedChecklistRow(record: record) {
-                        await importChecklist(from: record)
-                    }
+                ForEach(sharedChecklists, id: \.objectID) { checklist in
+                    SharedChecklistRow(checklist: checklist)
                 }
             }
             .padding(NeumorphicSpacing.md)
         }
     }
 
-    private func fetchSharedChecklists() async {
-        isLoading = true
-        defer { isLoading = false }
-
+    private func checkiCloudStatus() async {
         do {
-            sharedRecords = try await sharingService.fetchSharedChecklists()
+            let status = try await coreDataStack.ckContainer.accountStatus()
+            iCloudAvailable = (status == .available)
         } catch {
-            errorMessage = error.localizedDescription
-            showingError = true
-        }
-    }
-
-    private func importChecklist(from record: CKRecord) async {
-        do {
-            let _ = try await sharingService.importSharedChecklist(from: record, modelContext: modelContext)
-        } catch {
-            errorMessage = error.localizedDescription
-            showingError = true
+            iCloudAvailable = false
         }
     }
 }
@@ -192,59 +185,39 @@ struct SharedChecklistsView: View {
 // MARK: - Shared Checklist Row
 
 struct SharedChecklistRow: View {
-    let record: CKRecord
-    let onImport: () async -> Void
-
-    @State private var isImporting = false
-
-    private var title: String {
-        record["title"] as? String ?? "無題のリスト"
-    }
-
-    private var ownerName: String {
-        record["ownerName"] as? String ?? "不明"
-    }
+    @ObservedObject var checklist: CDChecklist
 
     var body: some View {
-        HStack(spacing: NeumorphicSpacing.md) {
-            VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(Color.neumorphicTextPrimary)
+        NavigationLink(value: checklist.objectID) {
+            HStack(spacing: NeumorphicSpacing.md) {
+                VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
+                    Text(checklist.wrappedTitle)
+                        .font(.headline)
+                        .foregroundStyle(Color.neumorphicTextPrimary)
 
-                HStack(spacing: NeumorphicSpacing.xs) {
-                    Image(systemName: "person.fill")
-                        .font(.caption)
-                    Text(ownerName)
-                        .font(.caption)
+                    HStack(spacing: NeumorphicSpacing.xs) {
+                        Image(systemName: "person.fill")
+                            .font(.caption)
+                        Text((checklist.ownerName ?? "").isEmpty ? "不明" : (checklist.ownerName ?? "不明"))
+                            .font(.caption)
+                    }
+                    .foregroundStyle(Color.neumorphicTextTertiary)
                 }
-                .foregroundStyle(Color.neumorphicTextTertiary)
+
+                Spacer()
+
+                // Progress indicator
+                Text("\(checklist.completedCount)/\(checklist.totalCount)")
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(Color.neumorphicTextSecondary)
             }
-
-            Spacer()
-
-            Button {
-                Task {
-                    isImporting = true
-                    await onImport()
-                    isImporting = false
-                }
-            } label: {
-                if isImporting {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                } else {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(Color.orangeGradient)
-                }
-            }
-            .disabled(isImporting)
+            .padding(NeumorphicSpacing.md)
+            .background(Color.neumorphicSurface)
+            .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
+            .neumorphicShadow()
         }
-        .padding(NeumorphicSpacing.md)
-        .background(Color.neumorphicSurface)
-        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.lg))
-        .neumorphicShadow()
+        .buttonStyle(.plain)
     }
 }
 

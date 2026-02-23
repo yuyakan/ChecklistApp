@@ -1,5 +1,5 @@
 import Foundation
-import SwiftData
+import CoreData
 import SwiftUI
 import Combine
 import WidgetKit
@@ -11,7 +11,7 @@ class HomeViewModel: ObservableObject {
     @Published var showingCreateSheet = false
     @Published var showingSettings = false
 
-    func filteredChecklists(_ checklists: [Checklist]) -> [Checklist] {
+    func filteredChecklists(_ checklists: [CDChecklist]) -> [CDChecklist] {
         var result = checklists
 
         // カテゴリフィルタ
@@ -22,29 +22,18 @@ class HomeViewModel: ObservableObject {
         // 検索フィルタ
         if !searchText.isEmpty {
             result = result.filter { checklist in
-                checklist.title.localizedCaseInsensitiveContains(searchText) ||
-                checklist.items.contains { $0.name.localizedCaseInsensitiveContains(searchText) }
+                checklist.wrappedTitle.localizedCaseInsensitiveContains(searchText) ||
+                checklist.itemsArray.contains { $0.wrappedName.localizedCaseInsensitiveContains(searchText) }
             }
         }
 
         // 更新日時でソート（新しい順）
-        return result.sorted { $0.updatedAt > $1.updatedAt }
+        return result.sorted { $0.wrappedUpdatedAt > $1.wrappedUpdatedAt }
     }
 
-    func deleteChecklists(at offsets: IndexSet, from checklists: [Checklist], modelContext: ModelContext) {
-        let filteredList = filteredChecklists(checklists)
-        let sharingService = CloudKitSharingService.shared
-        for index in offsets {
-            let checklist = filteredList[index]
-            if checklist.isShared {
-                Task {
-                    try? await sharingService.deleteSharedRecords(for: checklist)
-                }
-            }
-            modelContext.delete(checklist)
-        }
-        // 明示的に保存してからWidgetを更新
-        try? modelContext.save()
+    func deleteChecklist(_ checklist: CDChecklist, context: NSManagedObjectContext) {
+        context.delete(checklist)
+        try? context.save()
         WidgetCenter.shared.reloadAllTimelines()
     }
 }

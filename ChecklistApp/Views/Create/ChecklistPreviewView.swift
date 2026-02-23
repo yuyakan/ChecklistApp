@@ -2,21 +2,21 @@ import SwiftUI
 
 struct ChecklistPreviewView: View {
     @Environment(\.dismiss) private var dismiss
-    let checklist: Checklist
-    let onSave: () -> Void
+    @State private var draft: ChecklistDraft
+    let onSave: (ChecklistDraft) -> Void
 
     @State private var editingTitle: String
     @State private var selectedCategory: Category
-    @State private var editingItem: ChecklistItemModel?
+    @State private var editingItemIndex: Int?
     @State private var editingItemName: String = ""
     @State private var editingItemNote: String = ""
     @State private var editingItemPriority: Priority? = .medium
 
-    init(checklist: Checklist, onSave: @escaping () -> Void) {
-        self.checklist = checklist
+    init(draft: ChecklistDraft, onSave: @escaping (ChecklistDraft) -> Void) {
+        self._draft = State(initialValue: draft)
         self.onSave = onSave
-        self._editingTitle = State(initialValue: checklist.title)
-        self._selectedCategory = State(initialValue: checklist.category)
+        self._editingTitle = State(initialValue: draft.title)
+        self._selectedCategory = State(initialValue: draft.category)
     }
 
     var body: some View {
@@ -41,8 +41,8 @@ struct ChecklistPreviewView: View {
                 }
             }
             .navigationTitle("プレビュー")
-            .sheet(item: $editingItem) { item in
-                itemEditSheet(item)
+            .sheet(item: $editingItemIndex) { index in
+                itemEditSheet(index)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -55,17 +55,19 @@ struct ChecklistPreviewView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
-                        checklist.title = editingTitle
-                        checklist.category = selectedCategory
-                        onSave()
+                        var finalDraft = draft
+                        finalDraft.title = editingTitle
+                        finalDraft.category = selectedCategory
+                        onSave(finalDraft)
+                        dismiss()
                     }
                     .fontWeight(.semibold)
                     .foregroundStyle(
-                        (editingTitle.isEmpty || checklist.items.isEmpty)
+                        (editingTitle.isEmpty || draft.items.isEmpty)
                             ? Color.neumorphicTextTertiary
                             : Color.accentOrangeStart
                     )
-                    .disabled(editingTitle.isEmpty || checklist.items.isEmpty)
+                    .disabled(editingTitle.isEmpty || draft.items.isEmpty)
                 }
             }
         }
@@ -123,7 +125,7 @@ struct ChecklistPreviewView: View {
 
                 Spacer()
 
-                Text("\(checklist.items.count)件")
+                Text("\(draft.items.count)件")
                     .font(.subheadline)
                     .foregroundStyle(Color.neumorphicTextTertiary)
             }
@@ -133,7 +135,7 @@ struct ChecklistPreviewView: View {
             Divider()
                 .padding(.horizontal, NeumorphicSpacing.md)
 
-            ForEach(checklist.sortedItems) { item in
+            ForEach(Array(draft.items.enumerated()), id: \.element.id) { index, item in
                 previewItemRow(item)
                     .padding(.horizontal, NeumorphicSpacing.md)
                     .contentShape(Rectangle())
@@ -141,26 +143,26 @@ struct ChecklistPreviewView: View {
                         editingItemName = item.name
                         editingItemNote = item.note ?? ""
                         editingItemPriority = item.priority
-                        editingItem = item
+                        editingItemIndex = index
                     }
                     .contextMenu {
                         Button {
                             editingItemName = item.name
                             editingItemNote = item.note ?? ""
                             editingItemPriority = item.priority
-                            editingItem = item
+                            editingItemIndex = index
                         } label: {
                             Label("編集", systemImage: "pencil")
                         }
 
                         Button(role: .destructive) {
-                            checklist.removeItem(item)
+                            draft.items.remove(at: index)
                         } label: {
                             Label("削除", systemImage: "trash")
                         }
                     }
 
-                if item.id != checklist.sortedItems.last?.id {
+                if index < draft.items.count - 1 {
                     Divider()
                         .padding(.horizontal, NeumorphicSpacing.lg)
                 }
@@ -174,7 +176,7 @@ struct ChecklistPreviewView: View {
         .neumorphicShadow()
     }
 
-    private func itemEditSheet(_ item: ChecklistItemModel) -> some View {
+    private func itemEditSheet(_ index: Int) -> some View {
         NavigationStack {
             ZStack {
                 Color.neumorphicBackground.ignoresSafeArea()
@@ -240,17 +242,19 @@ struct ChecklistPreviewView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("キャンセル") {
-                        editingItem = nil
+                        editingItemIndex = nil
                     }
                     .foregroundStyle(Color.neumorphicTextSecondary)
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("完了") {
-                        item.name = editingItemName
-                        item.note = editingItemNote.isEmpty ? nil : editingItemNote
-                        item.priority = editingItemPriority
-                        editingItem = nil
+                        if index < draft.items.count {
+                            draft.items[index].name = editingItemName
+                            draft.items[index].note = editingItemNote.isEmpty ? nil : editingItemNote
+                            draft.items[index].priority = editingItemPriority
+                        }
+                        editingItemIndex = nil
                     }
                     .fontWeight(.semibold)
                     .foregroundStyle(
@@ -265,7 +269,7 @@ struct ChecklistPreviewView: View {
         .presentationDetents([.medium])
     }
 
-    private func previewItemRow(_ item: ChecklistItemModel) -> some View {
+    private func previewItemRow(_ item: ChecklistDraft.ItemDraft) -> some View {
         HStack(spacing: NeumorphicSpacing.sm) {
             Image(systemName: "circle")
                 .font(.title3)
@@ -307,6 +311,11 @@ struct ChecklistPreviewView: View {
         }
         .padding(.vertical, NeumorphicSpacing.xs)
     }
+}
+
+// Make Int conform to Identifiable for sheet(item:)
+extension Int: @retroactive Identifiable {
+    public var id: Int { self }
 }
 
 struct CategoryChipButton: View {
@@ -399,21 +408,5 @@ struct PriorityChipButton: View {
         } else {
             Color.neumorphicBackground
         }
-    }
-}
-
-#Preview {
-    let checklist = Checklist(
-        title: "買い物リスト",
-        category: .shopping,
-        items: [
-            ChecklistItemModel(name: "牛乳", note: "低脂肪のもの", priority: .high, order: 0),
-            ChecklistItemModel(name: "卵", priority: .medium, order: 1),
-            ChecklistItemModel(name: "パン", priority: .low, order: 2)
-        ]
-    )
-
-    return ChecklistPreviewView(checklist: checklist) {
-        print("Saved")
     }
 }

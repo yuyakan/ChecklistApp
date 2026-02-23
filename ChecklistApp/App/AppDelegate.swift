@@ -1,5 +1,6 @@
 import UIKit
 import CloudKit
+import CoreData
 
 class AppDelegate: NSObject, UIApplicationDelegate {
 
@@ -34,11 +35,18 @@ class SceneDelegate: NSObject, UIWindowSceneDelegate {
     private func acceptCloudKitShare(metadata: CKShare.Metadata) {
         print("CloudKit共有を受け入れ中: \(metadata.share.recordID)")
 
-        Task {
-            let service = CloudKitSharingService.shared
+        let stack = CoreDataStack.shared
+        guard let sharedStore = stack.sharedPersistentStore else {
+            print("Shared store not found")
+            return
+        }
 
+        Task {
             do {
-                try await service.acceptShare(metadata: metadata)
+                try await stack.container.acceptShareInvitations(
+                    from: [metadata],
+                    into: sharedStore
+                )
                 print("共有の受け入れに成功しました")
 
                 // 通知を送信して共有リスト画面を表示

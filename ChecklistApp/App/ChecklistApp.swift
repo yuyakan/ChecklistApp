@@ -1,5 +1,5 @@
 import SwiftUI
-import SwiftData
+import CoreData
 import WidgetKit
 import Combine
 import CloudKit
@@ -18,9 +18,12 @@ struct ChecklistApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var navigationState = NavigationState()
-    var sharedModelContainer: ModelContainer = AppGroupContainer.modelContainer
+    @StateObject private var coreDataStack = CoreDataStack.shared
 
     init() {
+        // Run migration from SwiftData to CoreData
+        DataMigrationService.migrateIfNeeded(to: CoreDataStack.shared.container.viewContext)
+
         // Darwin Notificationをリッスン
         setupDarwinNotificationObserver()
     }
@@ -28,7 +31,9 @@ struct ChecklistApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(\.managedObjectContext, coreDataStack.container.viewContext)
                 .environmentObject(navigationState)
+                .environmentObject(coreDataStack)
                 .onOpenURL { url in
                     handleDeepLink(url: url)
                 }
@@ -37,10 +42,9 @@ struct ChecklistApp: App {
                     await setupCloudKitShareHandler()
                 }
         }
-        .modelContainer(sharedModelContainer)
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                let context = ModelContext(sharedModelContainer)
+                let context = coreDataStack.container.viewContext
                 LiveActivityService.shared.checkPendingUpdates(with: context)
             }
         }
@@ -62,13 +66,19 @@ struct ChecklistApp: App {
     }
 
     private func acceptShare(metadata: CKShare.Metadata) async {
-        let service = CloudKitSharingService.shared
+        let stack = CoreDataStack.shared
+        guard let sharedStore = stack.sharedPersistentStore else {
+            print("Shared store not found")
+            return
+        }
 
         do {
-            try await service.acceptShare(metadata: metadata)
+            try await stack.container.acceptShareInvitations(
+                from: [metadata],
+                into: sharedStore
+            )
             print("共有を受け入れました")
 
-            // 共有されたリスト画面を表示
             await MainActor.run {
                 navigationState.showingSharedChecklists = true
             }
@@ -78,9 +88,9 @@ struct ChecklistApp: App {
     }
 
     private func setupDarwinNotificationObserver() {
-        DarwinNotificationCenter.shared.observe(.liveActivityUpdateRequested) { [self] in
+        DarwinNotificationCenter.shared.observe(.liveActivityUpdateRequested) {
             Task { @MainActor in
-                let context = ModelContext(sharedModelContainer)
+                let context = CoreDataStack.shared.container.viewContext
                 LiveActivityService.shared.checkPendingUpdates(with: context)
             }
         }
@@ -91,18 +101,16 @@ struct ChecklistApp: App {
 
         switch url.host {
         case "toggle":
-            // URLスキーム: checklistapp://toggle/{itemId}
             guard let itemIdString = url.pathComponents.last,
                   let itemId = UUID(uuidString: itemIdString) else {
                 return
             }
             Task { @MainActor in
-                let context = ModelContext(sharedModelContainer)
+                let context = coreDataStack.container.viewContext
                 toggleItem(itemId: itemId, context: context)
             }
 
         case "checklist":
-            // URLスキーム: checklistapp://checklist/{checklistId}
             guard let checklistIdString = url.pathComponents.last,
                   let checklistId = UUID(uuidString: checklistIdString) else {
                 return
@@ -116,12 +124,13 @@ struct ChecklistApp: App {
         }
     }
 
-    private func toggleItem(itemId: UUID, context: ModelContext) {
-        let descriptor = FetchDescriptor<ChecklistItemModel>()
+    private func toggleItem(itemId: UUID, context: NSManagedObjectContext) {
+        let request: NSFetchRequest<CDChecklistItem> = CDChecklistItem.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", itemId as CVarArg)
+        request.fetchLimit = 1
 
         do {
-            let items = try context.fetch(descriptor)
-            guard let item = items.first(where: { $0.id == itemId }),
+            guard let item = try context.fetch(request).first,
                   let checklist = item.checklist else {
                 return
             }

@@ -1,5 +1,5 @@
 import SwiftUI
-import SwiftData
+import CoreData
 
 struct ContentView: View {
     @EnvironmentObject private var navigationState: NavigationState
@@ -34,10 +34,4 @@ struct ContentView: View {
             showingSharedChecklists = newValue
         }
     }
-}
-
-#Preview {
-    ContentView()
-        .environmentObject(NavigationState())
-        .modelContainer(for: Checklist.self, inMemory: true)
 }

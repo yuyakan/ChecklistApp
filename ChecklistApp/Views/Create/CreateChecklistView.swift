@@ -1,9 +1,9 @@
 import SwiftUI
-import SwiftData
+import CoreData
 import WidgetKit
 
 struct CreateChecklistView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = CreateChecklistViewModel()
 
@@ -58,9 +58,9 @@ struct CreateChecklistView: View {
                 Text(viewModel.errorMessage ?? "不明なエラーが発生しました")
             }
             .sheet(isPresented: $viewModel.showingResult) {
-                if let checklist = viewModel.generatedChecklist {
-                    ChecklistPreviewView(checklist: checklist) {
-                        saveChecklist(checklist)
+                if let draft = viewModel.generatedDraft {
+                    ChecklistPreviewView(draft: draft) { finalDraft in
+                        saveDraft(finalDraft)
                     }
                 }
             }
@@ -101,21 +101,22 @@ struct CreateChecklistView: View {
         }
     }
 
-    private func saveChecklist(_ checklist: Checklist) {
-        modelContext.insert(checklist)
-        // 明示的に保存してからウィジェットを更新
-        try? modelContext.save()
+    private func saveDraft(_ draft: ChecklistDraft) {
+        let checklist = draft.save(to: viewContext)
+        do {
+            try viewContext.save()
+            print("[CloudKit Debug] CoreData save succeeded.")
+            print("[CloudKit Debug] Checklist store: \(checklist.objectID.persistentStore?.url?.lastPathComponent ?? "nil")")
+            print("[CloudKit Debug] Checklist objectID isTemporary: \(checklist.objectID.isTemporaryID)")
+            for item in checklist.itemsArray {
+                print("[CloudKit Debug] Item '\(item.wrappedName)' store: \(item.objectID.persistentStore?.url?.lastPathComponent ?? "nil")")
+            }
+        } catch {
+            print("[CloudKit Debug] CoreData save FAILED: \(error)")
+        }
         viewModel.reset()
         WidgetCenter.shared.reloadAllTimelines()
 
-        // Live Activityを開始
-        LiveActivityService.shared.startActivity(for: checklist)
-
         dismiss()
     }
-}
-
-#Preview {
-    CreateChecklistView()
-        .modelContainer(for: Checklist.self, inMemory: true)
 }

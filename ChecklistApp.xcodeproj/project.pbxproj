@@ -55,9 +55,12 @@
 		4BC02FB02F03B272006D7EF3 /* Exceptions for "ChecklistApp" folder in "ChecklistWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Models/Checklist.swift,
+				ChecklistApp.xcdatamodeld,
 				Models/ChecklistActivityAttributes.swift,
-				Models/ChecklistItem.swift,
+				"Models/CoreData/CDChecklist+CoreDataClass.swift",
+				"Models/CoreData/CDChecklist+CoreDataProperties.swift",
+				"Models/CoreData/CDChecklistItem+CoreDataClass.swift",
+				"Models/CoreData/CDChecklistItem+CoreDataProperties.swift",
 				Models/InputSource.swift,
 			);
 			target = 4BC02EB72F00E7A6006D7EF3 /* ChecklistWidgetExtension */;

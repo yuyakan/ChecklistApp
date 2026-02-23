@@ -66,11 +66,10 @@ extension GeneratedChecklistItem {
         return Priority(rawValue: priority)
     }
 
-    func toChecklistItemModel(order: Int) -> ChecklistItemModel {
-        ChecklistItemModel(
+    func toItemDraft(order: Int) -> ChecklistDraft.ItemDraft {
+        ChecklistDraft.ItemDraft(
             name: name,
             note: note,
-            isCompleted: false,
             priority: toPriority(),
             order: order
         )

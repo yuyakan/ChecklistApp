@@ -1,20 +1,20 @@
 import SwiftUI
 import UIKit
-import SwiftData
+import CoreData
 import CloudKit
 
 struct ChecklistDetailView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var coreDataStack: CoreDataStack
     @StateObject private var viewModel: ChecklistDetailViewModel
     @State private var showingShareSheet = false
     @State private var showingCloudKitError = false
     @State private var cloudKitErrorMessage = ""
 
-    let checklist: Checklist
-    private let sharingService = CloudKitSharingService.shared
+    @ObservedObject var checklist: CDChecklist
 
-    init(checklist: Checklist) {
+    init(checklist: CDChecklist) {
         self.checklist = checklist
         self._viewModel = StateObject(wrappedValue: ChecklistDetailViewModel(checklist: checklist))
     }
@@ -43,7 +43,7 @@ struct ChecklistDetailView: View {
                 .padding(.bottom, NeumorphicSpacing.xl)
             }
         }
-        .navigationTitle(checklist.title)
+        .navigationTitle(checklist.wrappedTitle)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -66,7 +66,7 @@ struct ChecklistDetailView: View {
                         }
                     } label: {
                         Label(
-                            checklist.isShared ? "共有中" : "CloudKitで共有",
+                            checklist.isShared ? "共有設定" : "CloudKitで共有",
                             systemImage: checklist.isShared ? "person.2.fill" : "person.badge.plus"
                         )
                     }
@@ -74,14 +74,9 @@ struct ChecklistDetailView: View {
                     Divider()
 
                     Button(role: .destructive) {
-                        Task {
-                            if checklist.isShared {
-                                try? await sharingService.deleteSharedRecords(for: checklist)
-                            }
-                            modelContext.delete(checklist)
-                            try? modelContext.save()
-                            dismiss()
-                        }
+                        viewContext.delete(checklist)
+                        try? viewContext.save()
+                        dismiss()
                     } label: {
                         Label("削除", systemImage: "trash")
                     }
@@ -94,7 +89,7 @@ struct ChecklistDetailView: View {
         .alert("タイトルを編集", isPresented: $viewModel.isEditing) {
             TextField("タイトル", text: $viewModel.editingTitle)
             Button("キャンセル", role: .cancel) {
-                viewModel.editingTitle = checklist.title
+                viewModel.editingTitle = checklist.wrappedTitle
             }
             Button("保存") {
                 viewModel.updateTitle()
@@ -119,17 +114,47 @@ struct ChecklistDetailView: View {
     // MARK: - CloudKit Sharing
 
     private func shareWithCloudKit() async {
+        let stack = coreDataStack
+
         do {
-            let share = try await sharingService.createShare(for: checklist, in: modelContext)
-            CloudKitSharingPresenter.present(
-                share: share,
-                container: CKContainer(identifier: "iCloud.com.kanbe1365.ChecklistApp"),
-                checklist: checklist,
-                onStopSharing: {
-                    checklist.isShared = false
-                    try? modelContext.save()
+            if coreDataStack.isShared(object: checklist) {
+                // Already shared - show existing share management
+                let shares = try stack.container.fetchShares(matching: [checklist.objectID])
+                if let existingShare = shares.values.first {
+                    await MainActor.run {
+                        CloudKitSharingPresenter.present(
+                            share: existingShare,
+                            container: stack.ckContainer,
+                            checklist: checklist,
+                            onStopSharing: {
+                                checklist.isShared = false
+                                try? viewContext.save()
+                            }
+                        )
+                    }
                 }
-            )
+            } else {
+                // New share
+                let (_, share, _) = try await stack.container.share(
+                    [checklist],
+                    to: nil
+                )
+                share[CKShare.SystemFieldKey.title] = checklist.wrappedTitle as CKRecordValue
+                checklist.isShared = true
+                try? viewContext.save()
+
+                await MainActor.run {
+                    CloudKitSharingPresenter.present(
+                        share: share,
+                        container: stack.ckContainer,
+                        checklist: checklist,
+                        onStopSharing: {
+                            checklist.isShared = false
+                            try? viewContext.save()
+                        }
+                    )
+                }
+            }
         } catch {
             cloudKitErrorMessage = error.localizedDescription
             showingCloudKitError = true
@@ -274,7 +299,7 @@ struct ChecklistDetailView: View {
             Divider()
                 .padding(.horizontal, NeumorphicSpacing.md)
 
-            ForEach(checklist.sortedItems) { item in
+            ForEach(checklist.sortedItems, id: \.objectID) { item in
                 ChecklistItemRowView(
                     item: item,
                     onToggle: {
@@ -291,7 +316,7 @@ struct ChecklistDetailView: View {
                 )
                 .padding(.horizontal, NeumorphicSpacing.md)
 
-                if item.id != checklist.sortedItems.last?.id {
+                if item.objectID != checklist.sortedItems.last?.objectID {
                     Divider()
                         .padding(.horizontal, NeumorphicSpacing.lg)
                 }
@@ -343,8 +368,8 @@ struct ChecklistDetailView: View {
             VStack(spacing: NeumorphicSpacing.sm) {
                 infoRow(label: "カテゴリ", value: checklist.category.description, icon: checklist.category.icon)
                 infoRow(label: "作成方法", value: checklist.inputSource.description, icon: checklist.inputSource.icon)
-                infoRow(label: "作成日", value: checklist.createdAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "calendar")
-                infoRow(label: "更新日", value: checklist.updatedAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "clock")
+                infoRow(label: "作成日", value: checklist.wrappedCreatedAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "calendar")
+                infoRow(label: "更新日", value: checklist.wrappedUpdatedAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "clock")
                 if checklist.isShared {
                     infoRow(label: "共有状態", value: "共有中", icon: "person.2.fill")
                 }
@@ -532,23 +557,5 @@ struct NeumorphicPriorityButton: View {
         }
         .buttonStyle(.plain)
         .neumorphicShadow(isPressed: !isSelected, subtle: true)
-    }
-}
-
-#Preview {
-    let checklist = Checklist(
-        title: "買い物リスト",
-        category: .shopping,
-        items: [
-            ChecklistItemModel(name: "牛乳", isCompleted: true, priority: .high, order: 0),
-            ChecklistItemModel(name: "卵", isCompleted: true, priority: .medium, order: 1),
-            ChecklistItemModel(name: "パン", isCompleted: false, priority: .low, order: 2),
-            ChecklistItemModel(name: "バター", note: "無塩のもの", isCompleted: false, priority: .medium, order: 3)
-        ],
-        inputSource: .aiGenerated
-    )
-
-    return NavigationStack {
-        ChecklistDetailView(checklist: checklist)
     }
 }

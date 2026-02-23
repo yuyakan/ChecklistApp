@@ -1,8 +1,8 @@
 import Foundation
- import SwiftUI
+import SwiftUI
 import PhotosUI
 import UIKit
- import Combine
+import Combine
 
 enum CreateInputMode: String, CaseIterable {
     case photo
@@ -58,7 +58,7 @@ class CreateChecklistViewModel: ObservableObject {
 
     // 抽出/生成結果
     @Published var extractedText = ""
-    @Published var generatedChecklist: Checklist?
+    @Published var generatedDraft: ChecklistDraft?
     @Published var showingResult = false
 
     let aiService = ChecklistAIService()
@@ -97,7 +97,7 @@ class CreateChecklistViewModel: ObservableObject {
 
             // AIでチェックリストに変換
             let extraction = try await aiService.extractChecklist(from: recognizedText, source: .photo)
-            generatedChecklist = aiService.createChecklist(from: extraction, source: .photo)
+            generatedDraft = aiService.createDraft(from: extraction, source: .photo)
             showingResult = true
 
         } catch {
@@ -119,7 +119,7 @@ class CreateChecklistViewModel: ObservableObject {
 
             // AIでチェックリストに変換
             let extraction = try await aiService.extractChecklist(from: recognizedText, source: .photo)
-            generatedChecklist = aiService.createChecklist(from: extraction, source: .photo)
+            generatedDraft = aiService.createDraft(from: extraction, source: .photo)
             showingResult = true
 
         } catch {
@@ -148,7 +148,7 @@ class CreateChecklistViewModel: ObservableObject {
 
             // AIでチェックリストに変換
             let extraction = try await aiService.extractChecklist(from: recognizedText, source: .voice)
-            generatedChecklist = aiService.createChecklist(from: extraction, source: .voice)
+            generatedDraft = aiService.createDraft(from: extraction, source: .voice)
             showingResult = true
 
         } catch {
@@ -176,7 +176,7 @@ class CreateChecklistViewModel: ObservableObject {
 
             // AIでチェックリストに変換
             let extraction = try await aiService.extractChecklist(from: inputText, source: .text)
-            generatedChecklist = aiService.createChecklist(from: extraction, source: .text)
+            generatedDraft = aiService.createDraft(from: extraction, source: .text)
             showingResult = true
 
         } catch {
@@ -201,7 +201,7 @@ class CreateChecklistViewModel: ObservableObject {
 
         do {
             let generation = try await aiService.generateChecklist(for: conditionText)
-            generatedChecklist = aiService.createChecklist(from: generation)
+            generatedDraft = aiService.createDraft(from: generation)
             showingResult = true
 
         } catch {
@@ -220,7 +220,7 @@ class CreateChecklistViewModel: ObservableObject {
         inputText = ""
         conditionText = ""
         extractedText = ""
-        generatedChecklist = nil
+        generatedDraft = nil
         showingResult = false
         errorMessage = nil
         speechRecognitionService.transcribedText = ""

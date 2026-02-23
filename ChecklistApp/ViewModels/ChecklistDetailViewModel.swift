@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import CoreData
 import Combine
 import WidgetKit
 import ActivityKit
@@ -15,13 +16,13 @@ class ChecklistDetailViewModel: ObservableObject {
     @Published var itemNote = ""
     @Published var isLiveActivityActive = false
 
-    let checklist: Checklist
+    let checklist: CDChecklist
     private var cancellables = Set<AnyCancellable>()
 
-    init(checklist: Checklist) {
+    init(checklist: CDChecklist) {
         self.checklist = checklist
-        self.editingTitle = checklist.title
-        self.isLiveActivityActive = LiveActivityService.shared.isActivityActive(for: checklist.id)
+        self.editingTitle = checklist.wrappedTitle
+        self.isLiveActivityActive = LiveActivityService.shared.isActivityActive(for: checklist.wrappedId)
 
         // Live Activityの状態変化を監視
         observeLiveActivityDismissal()
@@ -29,7 +30,7 @@ class ChecklistDetailViewModel: ObservableObject {
 
     /// Live Activityの状態を更新
     func refreshLiveActivityState() {
-        isLiveActivityActive = LiveActivityService.shared.isActivityActive(for: checklist.id)
+        isLiveActivityActive = LiveActivityService.shared.isActivityActive(for: checklist.wrappedId)
     }
 
     /// Live Activityがロック画面から消去された場合の監視
@@ -39,7 +40,7 @@ class ChecklistDetailViewModel: ObservableObject {
             .sink { [weak self] dismissedId in
                 guard let self = self,
                       let dismissedId = dismissedId,
-                      dismissedId == self.checklist.id else { return }
+                      dismissedId == self.checklist.wrappedId else { return }
 
                 // トグルをオフにする
                 self.isLiveActivityActive = false
@@ -50,7 +51,7 @@ class ChecklistDetailViewModel: ObservableObject {
     /// Live Activityの表示を切り替え
     func toggleLiveActivity() {
         if isLiveActivityActive {
-            LiveActivityService.shared.endActivity(for: checklist.id)
+            LiveActivityService.shared.endActivity(for: checklist.wrappedId)
             isLiveActivityActive = false
         } else {
             LiveActivityService.shared.startActivity(for: checklist)
@@ -58,9 +59,10 @@ class ChecklistDetailViewModel: ObservableObject {
         }
     }
 
-    func toggleItem(_ item: ChecklistItemModel) {
+    func toggleItem(_ item: CDChecklistItem) {
         item.isCompleted.toggle()
         checklist.updatedAt = Date()
+        try? checklist.managedObjectContext?.save()
         reloadWidget()
 
         // Live Activityがアクティブなら更新
@@ -78,16 +80,21 @@ class ChecklistDetailViewModel: ObservableObject {
 
     func addItem() {
         guard !newItemName.isEmpty else { return }
+        guard let context = checklist.managedObjectContext else { return }
 
-        let item = ChecklistItemModel(
+        let item = CDChecklistItem.create(
+            in: context,
             name: newItemName,
             note: itemNote.isEmpty ? nil : itemNote,
             isCompleted: false,
             priority: selectedPriority,
-            order: checklist.items.count
+            order: Int32(checklist.totalCount)
         )
 
-        checklist.addItem(item)
+        checklist.addToItems(item)
+        checklist.updatedAt = Date()
+        try? context.save()
+
         resetNewItemFields()
         reloadWidget()
 
@@ -97,21 +104,9 @@ class ChecklistDetailViewModel: ObservableObject {
         }
     }
 
-    func deleteItems(at offsets: IndexSet) {
-        let sortedItems = checklist.sortedItems
-        for index in offsets {
-            checklist.removeItem(sortedItems[index])
-        }
-        reloadWidget()
-
-        // Live Activityがアクティブなら更新
-        if isLiveActivityActive {
-            LiveActivityService.shared.updateActivity(for: checklist)
-        }
-    }
-
-    func deleteItem(_ item: ChecklistItemModel) {
+    func deleteItem(_ item: CDChecklistItem) {
         checklist.removeItem(item)
+        try? checklist.managedObjectContext?.save()
         reloadWidget()
 
         // Live Activityがアクティブなら更新
@@ -122,31 +117,34 @@ class ChecklistDetailViewModel: ObservableObject {
 
     func moveItems(from source: IndexSet, to destination: Int) {
         checklist.moveItem(from: source, to: destination)
+        try? checklist.managedObjectContext?.save()
     }
 
     func updateTitle() {
         guard !editingTitle.isEmpty else {
-            editingTitle = checklist.title
+            editingTitle = checklist.wrappedTitle
             return
         }
         checklist.title = editingTitle
         checklist.updatedAt = Date()
+        try? checklist.managedObjectContext?.save()
     }
 
-    func updateItem(_ item: ChecklistItemModel, name: String, note: String?, priority: Priority?) {
+    func updateItem(_ item: CDChecklistItem, name: String, note: String?, priority: Priority?) {
         item.name = name
         item.note = note
         item.priority = priority
         checklist.updatedAt = Date()
+        try? checklist.managedObjectContext?.save()
     }
 
     func shareText() -> String {
-        var text = "[\(checklist.title)]\n\n"
+        var text = "[\(checklist.wrappedTitle)]\n\n"
 
         for item in checklist.sortedItems {
             let checkMark = item.isCompleted ? "✓" : "○"
-            text += "\(checkMark) \(item.name)"
-            if let note = item.note {
+            text += "\(checkMark) \(item.wrappedName)"
+            if let note = item.note, !note.isEmpty {
                 text += " (\(note))"
             }
             text += "\n"
