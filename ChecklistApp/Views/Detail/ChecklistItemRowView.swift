@@ -63,6 +63,7 @@ struct ChecklistItemRowView: View {
         }
         .sheet(isPresented: $showingEditSheet) {
             editSheet
+                .iPadExpandedModalLayout()
         }
     }
 
@@ -214,6 +215,7 @@ struct ChecklistItemRowView: View {
             }
         }
         .presentationDetents([.large])
+        .iPadExpandedModalLayout()
     }
 
     private func prepareEditValues() {

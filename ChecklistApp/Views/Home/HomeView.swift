@@ -99,9 +99,11 @@ struct HomeView: View {
             }
             .sheet(isPresented: $viewModel.showingCreateSheet) {
                 CreateChecklistView()
+                    .iPadExpandedModalLayout()
             }
             .sheet(isPresented: $viewModel.showingSettings) {
                 SettingsView()
+                    .iPadExpandedModalLayout()
             }
             .alert("チェックリストを削除", isPresented: $viewModel.showingDeleteConfirmation) {
                 Button("削除", role: .destructive) {

@@ -62,6 +62,7 @@ struct CreateChecklistView: View {
                     ChecklistPreviewView(draft: draft) { finalDraft in
                         saveDraft(finalDraft)
                     }
+                    .iPadExpandedModalLayout()
                 }
             }
         }

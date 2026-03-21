@@ -98,12 +98,14 @@ struct ChecklistDetailView: View {
         }
         .sheet(isPresented: $viewModel.showingAddItem) {
             AddItemSheet(viewModel: viewModel)
+                .iPadExpandedModalLayout()
         }
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(text: viewModel.shareText())
         }
         .sheet(isPresented: $showingDeleteSheet) {
             DeleteItemsSheet(viewModel: viewModel)
+                .iPadExpandedModalLayout()
         }
         .alert("エラー", isPresented: $showingCloudKitError) {
             Button("OK", role: .cancel) {}
@@ -513,6 +515,7 @@ struct AddItemSheet: View {
             }
         }
         .presentationDetents([.medium])
+        .iPadExpandedModalLayout()
     }
 }
 
@@ -646,6 +649,7 @@ struct DeleteItemsSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .iPadExpandedModalLayout()
     }
 }
 

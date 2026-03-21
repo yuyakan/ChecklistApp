@@ -45,6 +45,7 @@ struct ChecklistPreviewView: View {
             .navigationTitle("プレビュー")
             .sheet(item: $editingItemIndex) { index in
                 itemEditSheet(index)
+                    .iPadExpandedModalLayout()
             }
             .sheet(isPresented: $showingDeleteSheet) {
                 PreviewDeleteItemsSheet(
@@ -55,6 +56,7 @@ struct ChecklistPreviewView: View {
                         selectedDeleteIDs.removeAll()
                     }
                 )
+                .iPadExpandedModalLayout()
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -290,6 +292,7 @@ struct ChecklistPreviewView: View {
             }
         }
         .presentationDetents([.medium])
+        .iPadExpandedModalLayout()
     }
 
     private func previewItemRow(_ item: ChecklistDraft.ItemDraft) -> some View {
@@ -477,6 +480,7 @@ struct PreviewDeleteItemsSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .iPadExpandedModalLayout()
     }
 }
 

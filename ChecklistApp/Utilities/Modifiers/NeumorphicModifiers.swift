@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Neumorphic Shadow Modifier
 
@@ -107,5 +108,16 @@ extension View {
 
     func neumorphicInset(cornerRadius: CGFloat = NeumorphicRadius.md) -> some View {
         modifier(NeumorphicInsetModifier(cornerRadius: cornerRadius))
+    }
+
+    @ViewBuilder
+    func iPadExpandedModalLayout() -> some View {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            self
+                .presentationSizing(.page)
+                .presentationCompactAdaptation(.none)
+        } else {
+            self
+        }
     }
 }
