@@ -11,8 +11,8 @@ enum AIServiceError: LocalizedError {
         switch self {
         case .sessionCreationFailed:
             return "AIセッションの作成に失敗しました"
-        case .generationFailed(let message):
-            return "生成に失敗しました: \(message)"
+        case .generationFailed:
+            return "生成に失敗しました"
         case .unsupportedDevice:
             return "このデバイスではAI機能がサポートされていません"
         }

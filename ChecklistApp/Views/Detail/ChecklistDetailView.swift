@@ -162,7 +162,7 @@ struct ChecklistDetailView: View {
                 }
             }
         } catch {
-            cloudKitErrorMessage = error.localizedDescription
+            cloudKitErrorMessage = UserErrorMessageResolver.message(for: error, context: .cloudShare)
             showingCloudKitError = true
         }
     }

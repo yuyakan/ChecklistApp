@@ -12,8 +12,8 @@ enum TextRecognitionError: LocalizedError {
         switch self {
         case .invalidImage:
             return "画像を読み込めませんでした"
-        case .recognitionFailed(let message):
-            return "テキスト認識に失敗しました: \(message)"
+        case .recognitionFailed:
+            return "テキスト認識に失敗しました"
         case .noTextFound:
             return "画像からテキストを検出できませんでした"
         }
@@ -79,7 +79,7 @@ class TextRecognitionService: ObservableObject {
         do {
             recognizedText = try await recognizeText(from: image)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             recognizedText = ""
         }
     }

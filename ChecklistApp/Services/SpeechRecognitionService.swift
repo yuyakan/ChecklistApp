@@ -165,7 +165,7 @@ class SpeechRecognitionService: ObservableObject {
 
         } catch {
             DispatchQueue.main.async {
-                self.errorMessage = "録音開始エラー: \(error.localizedDescription)"
+                self.errorMessage = UserErrorMessageResolver.message(for: error, context: .speechRecognition)
                 self.isRecording = false
             }
         }

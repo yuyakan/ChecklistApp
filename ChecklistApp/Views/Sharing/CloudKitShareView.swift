@@ -82,7 +82,7 @@ struct CloudKitShareButton: View {
                 }
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserErrorMessageResolver.message(for: error, context: .cloudShare)
             showingError = true
         }
     }

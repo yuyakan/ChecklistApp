@@ -101,7 +101,7 @@ class CreateChecklistViewModel: ObservableObject {
             showingResult = true
 
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true
         }
 
@@ -123,7 +123,7 @@ class CreateChecklistViewModel: ObservableObject {
             showingResult = true
 
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true
         }
 
@@ -152,7 +152,7 @@ class CreateChecklistViewModel: ObservableObject {
             showingResult = true
 
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true
         }
 
@@ -180,7 +180,7 @@ class CreateChecklistViewModel: ObservableObject {
             showingResult = true
 
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true
         }
 
@@ -205,7 +205,7 @@ class CreateChecklistViewModel: ObservableObject {
             showingResult = true
 
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true
         }
 
