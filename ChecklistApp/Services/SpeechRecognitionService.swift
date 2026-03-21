@@ -29,7 +29,7 @@ class SpeechRecognitionService: ObservableObject {
                     if status == .authorized {
                         self?.requestMicrophoneAndStartRecording()
                     } else {
-                        self?.errorMessage = "音声認識の権限が必要です"
+                        self?.errorMessage = "音声認識の権限が必要です。設定アプリ > プライバシーとセキュリティ > 音声認識 で許可してください。"
                     }
                 }
             }
@@ -37,7 +37,7 @@ class SpeechRecognitionService: ObservableObject {
             requestMicrophoneAndStartRecording()
         case .denied, .restricted:
             DispatchQueue.main.async {
-                self.errorMessage = "音声認識の権限がありません。設定から許可してください。"
+                self.errorMessage = "音声認識の権限がありません。設定アプリ > プライバシーとセキュリティ > 音声認識 で許可してください。"
             }
         @unknown default:
             break
@@ -54,7 +54,7 @@ class SpeechRecognitionService: ObservableObject {
                     if granted {
                         self?.beginRecording()
                     } else {
-                        self?.errorMessage = "マイクの権限が必要です"
+                        self?.errorMessage = "マイクの権限が必要です。設定アプリ > プライバシーとセキュリティ > マイク で許可してください。"
                     }
                 }
             }
@@ -62,7 +62,7 @@ class SpeechRecognitionService: ObservableObject {
             beginRecording()
         case .denied:
             DispatchQueue.main.async {
-                self.errorMessage = "マイクの権限がありません。設定から許可してください。"
+                self.errorMessage = "マイクの権限がありません。設定アプリ > プライバシーとセキュリティ > マイク で許可してください。"
             }
         @unknown default:
             break
