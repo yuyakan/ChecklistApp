@@ -49,11 +49,16 @@ struct NeumorphicSegmentButton: View {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.title3)
+                    .frame(height: 20)
                 Text(label)
                     .font(.caption)
                     .fontWeight(isSelected ? .medium : .regular)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(height: 16)
             }
             .frame(maxWidth: .infinity)
+            .frame(minHeight: 56)
             .padding(.vertical, NeumorphicSpacing.sm)
             .background(
                 Group {

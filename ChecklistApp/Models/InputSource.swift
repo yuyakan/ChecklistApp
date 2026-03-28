@@ -18,7 +18,7 @@ enum InputSource: String, Codable, CaseIterable {
         case .text:
             return "テキスト"
         case .aiGenerated:
-            return "AI生成"
+            return "自動"
         }
     }
 

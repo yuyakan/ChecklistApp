@@ -22,7 +22,7 @@ enum CreateInputMode: String, CaseIterable {
         case .text:
             return "テキスト"
         case .aiGenerate:
-            return "AI生成"
+            return "自動"
         }
     }
 
@@ -58,7 +58,7 @@ class CreateChecklistViewModel: ObservableObject {
     // テキスト入力
     @Published var inputText = ""
 
-    // AI生成
+    // 自動作成
     @Published var conditionText = ""
 
     // 抽出/生成結果
@@ -227,7 +227,7 @@ class CreateChecklistViewModel: ObservableObject {
         isProcessing = false
     }
 
-    // MARK: - AI生成
+    // MARK: - 自動作成
 
     func generateChecklistFromCondition() async {
         aiService.refreshAvailability()

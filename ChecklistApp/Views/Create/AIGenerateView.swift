@@ -61,12 +61,12 @@ struct AIGenerateView: View {
                 .foregroundStyle(Color.accentOrangeStart)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("AIで生成")
+                Text("自動で作成")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(Color.neumorphicTextPrimary)
 
-                Text("やりたいことを入力するだけで最適なリストを作成")
+                Text("やりたいことを入力するだけでリストを自動作成")
                     .font(.caption)
                     .foregroundStyle(Color.neumorphicTextTertiary)
             }
