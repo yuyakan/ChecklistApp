@@ -58,7 +58,7 @@ struct NeumorphicSegmentButton: View {
                     .frame(height: 16)
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 56)
+            .frame(minHeight: 46)
             .padding(.vertical, NeumorphicSpacing.sm)
             .background(
                 Group {
