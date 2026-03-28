@@ -13,11 +13,15 @@ enum UserErrorMessageResolver {
         if let aiError = error as? AIServiceError {
             switch aiError {
             case .sessionCreationFailed, .unsupportedDevice:
-                return "このデバイスではAI機能を利用できません。OSバージョンと端末対応状況をご確認ください。"
+                return "このデバイスではAI機能を利用できません。設定アプリでApple Intelligenceの設定、OSバージョン、端末対応状況をご確認ください。"
+            case .appleIntelligenceNotEnabled:
+                return "Apple IntelligenceがオフのためAI機能を利用できません。設定アプリでApple Intelligenceの設定をご確認ください。"
+            case .modelNotReady:
+                return "AIモデルの準備が完了していません。設定アプリでApple Intelligenceの設定、ネットワーク接続、空き容量をご確認ください。"
             case .generationFailed(let detail):
                 let normalizedDetail = detail.lowercased()
                 if normalizedDetail.contains("model assets are unavailable") {
-                    return "AIモデルの準備が完了していません。設定アプリでApple Intelligenceの状態、ネットワーク接続、空き容量をご確認ください。"
+                    return "AIモデルの準備が完了していません。設定アプリでApple Intelligenceの設定、ネットワーク接続、空き容量をご確認ください。"
                 }
                 if normalizedDetail.contains("not authenticated") {
                     return "Apple Accountへのサインインが必要です。設定アプリからサインイン状態をご確認ください。"

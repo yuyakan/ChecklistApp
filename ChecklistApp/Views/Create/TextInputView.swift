@@ -15,6 +15,10 @@ struct TextInputView: View {
             // Sample chips
             sampleChips
 
+            if let message = viewModel.aiService.availabilityMessage {
+                AIAvailabilityNoticeCard(message: message)
+            }
+
             // Convert button
             NeumorphicAccentButton(
                 title: "チェックリストに変換",
@@ -25,7 +29,7 @@ struct TextInputView: View {
                         await viewModel.processTextInput()
                     }
                 },
-                isDisabled: viewModel.inputText.isEmpty || viewModel.isProcessing
+                isDisabled: viewModel.inputText.isEmpty || viewModel.isProcessing || !viewModel.aiService.isAvailable
             )
         }
         .toolbar {
@@ -36,6 +40,9 @@ struct TextInputView: View {
                 }
                 .foregroundStyle(Color.accentOrangeStart)
             }
+        }
+        .onAppear {
+            viewModel.aiService.refreshAvailability()
         }
     }
 

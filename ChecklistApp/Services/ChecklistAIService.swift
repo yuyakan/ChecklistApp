@@ -6,6 +6,8 @@ enum AIServiceError: LocalizedError {
     case sessionCreationFailed
     case generationFailed(String)
     case unsupportedDevice
+    case appleIntelligenceNotEnabled
+    case modelNotReady
 
     var errorDescription: String? {
         switch self {
@@ -15,6 +17,31 @@ enum AIServiceError: LocalizedError {
             return "生成に失敗しました"
         case .unsupportedDevice:
             return "このデバイスではAI機能がサポートされていません"
+        case .appleIntelligenceNotEnabled:
+            return "Apple Intelligenceがオフになっています"
+        case .modelNotReady:
+            return "AIモデルの準備が完了していません"
+        }
+    }
+}
+
+enum AIAvailabilityState: Equatable {
+    case available
+    case unavailable(message: String)
+
+    var isAvailable: Bool {
+        if case .available = self {
+            return true
+        }
+        return false
+    }
+
+    var message: String? {
+        switch self {
+        case .available:
+            return nil
+        case .unavailable(let message):
+            return message
         }
     }
 }
@@ -23,11 +50,13 @@ enum AIServiceError: LocalizedError {
 class ChecklistAIService: ObservableObject {
     @Published var isProcessing = false
     @Published var errorMessage: String?
+    @Published private(set) var availabilityState: AIAvailabilityState = .unavailable(message: "AI機能の利用状態を確認しています")
 
     private var session: LanguageModelSession?
+    private let model = SystemLanguageModel.default
 
     init() {
-        setupSession()
+        refreshAvailability()
     }
 
     private func setupSession() {
@@ -35,15 +64,67 @@ class ChecklistAIService: ObservableObject {
     }
 
     var isAvailable: Bool {
-        return session != nil
+        availabilityState.isAvailable
+    }
+
+    var availabilityMessage: String? {
+        availabilityState.message
+    }
+
+    func refreshAvailability() {
+        switch model.availability {
+        case .available:
+            availabilityState = .available
+            setupSession()
+        case .unavailable(.deviceNotEligible):
+            availabilityState = .unavailable(message: "このデバイスではFoundation Modelsを利用できません。Apple Intelligenceの設定もあわせてご確認ください")
+            session = nil
+        case .unavailable(.appleIntelligenceNotEnabled):
+            availabilityState = .unavailable(message: "Apple IntelligenceがオフのためAI機能を利用できません。設定アプリでApple Intelligenceの設定をご確認ください")
+            session = nil
+        case .unavailable(.modelNotReady):
+            availabilityState = .unavailable(message: "AIモデルの準備が完了していないため、現在は利用できません。設定アプリでApple Intelligenceの設定をご確認ください")
+            session = nil
+        case .unavailable:
+            availabilityState = .unavailable(message: "AI機能は現在利用できません。設定アプリでApple Intelligenceの設定と端末状況をご確認ください")
+            session = nil
+        @unknown default:
+            availabilityState = .unavailable(message: "AI機能は現在利用できません。設定アプリでApple Intelligenceの設定と端末状況をご確認ください")
+            session = nil
+        }
+    }
+
+    private func availableSession() throws -> LanguageModelSession {
+        refreshAvailability()
+
+        guard availabilityState.isAvailable else {
+            switch model.availability {
+            case .unavailable(.appleIntelligenceNotEnabled):
+                throw AIServiceError.appleIntelligenceNotEnabled
+            case .unavailable(.modelNotReady):
+                throw AIServiceError.modelNotReady
+            case .unavailable(.deviceNotEligible):
+                throw AIServiceError.unsupportedDevice
+            case .unavailable:
+                throw AIServiceError.sessionCreationFailed
+            case .available:
+                throw AIServiceError.sessionCreationFailed
+            @unknown default:
+                throw AIServiceError.sessionCreationFailed
+            }
+        }
+
+        guard let session else {
+            throw AIServiceError.sessionCreationFailed
+        }
+
+        return session
     }
 
     // MARK: - 入力テキストからチェックリスト抽出
 
     func extractChecklist(from text: String, source: InputSource) async throws -> ChecklistExtraction {
-        guard let session = session else {
-            throw AIServiceError.sessionCreationFailed
-        }
+        let session = try availableSession()
 
         isProcessing = true
         defer { isProcessing = false }
@@ -87,9 +168,7 @@ class ChecklistAIService: ObservableObject {
     // MARK: - 条件からチェックリスト生成
 
     func generateChecklist(for condition: String) async throws -> ChecklistGeneration {
-        guard let session = session else {
-            throw AIServiceError.sessionCreationFailed
-        }
+        let session = try availableSession()
 
         isProcessing = true
         defer { isProcessing = false }

@@ -1,4 +1,4 @@
- import SwiftUI
+import SwiftUI
 import PhotosUI
 import UIKit
 
@@ -10,6 +10,10 @@ struct PhotoInputView: View {
             // Header card
             headerCard
 
+            if let message = viewModel.aiService.availabilityMessage {
+                AIAvailabilityNoticeCard(message: message)
+            }
+
             // Image selection/display card
             imageCard
 
@@ -17,6 +21,9 @@ struct PhotoInputView: View {
             if !viewModel.extractedText.isEmpty {
                 extractedTextCard
             }
+        }
+        .onAppear {
+            viewModel.aiService.refreshAvailability()
         }
         .photosPicker(
             isPresented: $viewModel.showingImagePicker,
@@ -77,7 +84,8 @@ struct PhotoInputView: View {
                         PhotoSourceButton(
                             title: "カメラ",
                             icon: "camera.fill",
-                            isCompact: true
+                            isCompact: true,
+                            isDisabled: !viewModel.aiService.isAvailable
                         ) {
                             viewModel.showingCamera = true
                         }
@@ -85,7 +93,8 @@ struct PhotoInputView: View {
                         PhotoSourceButton(
                             title: "ライブラリ",
                             icon: "photo.on.rectangle",
-                            isCompact: true
+                            isCompact: true,
+                            isDisabled: !viewModel.aiService.isAvailable
                         ) {
                             viewModel.showingImagePicker = true
                         }
@@ -101,7 +110,8 @@ struct PhotoInputView: View {
                     PhotoSourceButton(
                         title: "カメラで撮影",
                         icon: "camera.fill",
-                        isCompact: false
+                        isCompact: false,
+                        isDisabled: !viewModel.aiService.isAvailable
                     ) {
                         viewModel.showingCamera = true
                     }
@@ -109,7 +119,8 @@ struct PhotoInputView: View {
                     PhotoSourceButton(
                         title: "ライブラリ",
                         icon: "photo.on.rectangle",
-                        isCompact: false
+                        isCompact: false,
+                        isDisabled: !viewModel.aiService.isAvailable
                     ) {
                         viewModel.showingImagePicker = true
                     }
@@ -428,6 +439,7 @@ struct PhotoSourceButton: View {
     let title: String
     let icon: String
     let isCompact: Bool
+    let isDisabled: Bool
     let action: () -> Void
 
     var body: some View {
@@ -455,6 +467,8 @@ struct PhotoSourceButton: View {
         }
         .buttonStyle(.plain)
         .neumorphicShadow()
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.5 : 1.0)
     }
 }
 

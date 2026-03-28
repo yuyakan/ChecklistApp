@@ -25,8 +25,8 @@ struct AIGenerateView: View {
             suggestionsSection
 
             // AI availability check
-            if !viewModel.aiService.isAvailable {
-                aiUnavailableCard
+            if let message = viewModel.aiService.availabilityMessage {
+                AIAvailabilityNoticeCard(message: message)
             }
 
             // Generate button
@@ -48,6 +48,9 @@ struct AIGenerateView: View {
                 }
                 .foregroundStyle(Color.accentOrangeStart)
             }
+        }
+        .onAppear {
+            viewModel.aiService.refreshAvailability()
         }
     }
 
@@ -112,27 +115,6 @@ struct AIGenerateView: View {
         }
     }
 
-    private var aiUnavailableCard: some View {
-        VStack(spacing: NeumorphicSpacing.sm) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.title)
-                .foregroundStyle(Color.statusWarning)
-
-            Text("AI機能は現在利用できません")
-                .font(.subheadline)
-                .foregroundStyle(Color.neumorphicTextSecondary)
-
-            Text("このデバイスではFoundation Modelsが\nサポートされていません")
-                .font(.caption)
-                .foregroundStyle(Color.neumorphicTextTertiary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(NeumorphicSpacing.md)
-        .frame(maxWidth: .infinity)
-        .background(Color.statusWarning.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
-    }
-
     private var hintCard: some View {
         VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
             Label("ヒント", systemImage: "lightbulb.fill")
@@ -181,6 +163,31 @@ struct SuggestionChipButton: View {
         }
         .buttonStyle(.plain)
         .neumorphicShadow(subtle: true)
+    }
+}
+
+struct AIAvailabilityNoticeCard: View {
+    let message: String
+
+    var body: some View {
+        VStack(spacing: NeumorphicSpacing.sm) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.title)
+                .foregroundStyle(Color.statusWarning)
+
+            Text("AI機能は現在利用できません")
+                .font(.subheadline)
+                .foregroundStyle(Color.neumorphicTextSecondary)
+
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(Color.neumorphicTextTertiary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(NeumorphicSpacing.md)
+        .frame(maxWidth: .infinity)
+        .background(Color.statusWarning.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
     }
 }
 

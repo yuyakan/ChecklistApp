@@ -11,6 +11,10 @@ struct VoiceInputView: View {
             // Recording button
             recordingButton
 
+            if let message = viewModel.aiService.availabilityMessage {
+                AIAvailabilityNoticeCard(message: message)
+            }
+
             // Transcribed text card
             transcribedTextCard
 
@@ -25,7 +29,7 @@ struct VoiceInputView: View {
                             await viewModel.processVoiceInput()
                         }
                     },
-                    isDisabled: viewModel.isProcessing
+                    isDisabled: viewModel.isProcessing || !viewModel.aiService.isAvailable
                 )
             }
 
@@ -33,6 +37,9 @@ struct VoiceInputView: View {
             if let error = viewModel.speechRecognitionService.errorMessage {
                 errorCard(message: error)
             }
+        }
+        .onAppear {
+            viewModel.aiService.refreshAvailability()
         }
     }
 
@@ -61,6 +68,7 @@ struct VoiceInputView: View {
     private var recordingButton: some View {
         VStack(spacing: NeumorphicSpacing.md) {
             Button {
+                guard viewModel.aiService.isAvailable else { return }
                 if viewModel.speechRecognitionService.isRecording {
                     viewModel.speechRecognitionService.stopRecording()
                 } else {
@@ -102,6 +110,8 @@ struct VoiceInputView: View {
                 .frame(width: 140, height: 140)
             }
             .buttonStyle(.plain)
+            .disabled(!viewModel.aiService.isAvailable)
+            .opacity(viewModel.aiService.isAvailable ? 1.0 : 0.5)
 
             Text(viewModel.speechRecognitionService.isRecording ? "タップして停止" : "タップして録音開始")
                 .font(.subheadline)

@@ -75,12 +75,26 @@ class CreateChecklistViewModel: ObservableObject {
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
+
+        aiService.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - 写真処理
 
     func processSelectedPhoto() async {
         guard let photoItem = selectedPhotoItem else { return }
+        aiService.refreshAvailability()
+        guard aiService.isAvailable else {
+            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            showingError = true
+            selectedPhotoItem = nil
+            return
+        }
 
         isProcessing = true
         errorMessage = nil
@@ -109,6 +123,13 @@ class CreateChecklistViewModel: ObservableObject {
     }
 
     func processCapturedImage(_ image: UIImage) async {
+        aiService.refreshAvailability()
+        guard aiService.isAvailable else {
+            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            showingError = true
+            return
+        }
+
         isProcessing = true
         errorMessage = nil
 
@@ -133,6 +154,13 @@ class CreateChecklistViewModel: ObservableObject {
     // MARK: - 音声処理
 
     func processVoiceInput() async {
+        aiService.refreshAvailability()
+        guard aiService.isAvailable else {
+            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            showingError = true
+            return
+        }
+
         guard !speechRecognitionService.transcribedText.isEmpty else {
             errorMessage = "音声が認識されませんでした"
             showingError = true
@@ -162,6 +190,13 @@ class CreateChecklistViewModel: ObservableObject {
     // MARK: - テキスト処理
 
     func processTextInput() async {
+        aiService.refreshAvailability()
+        guard aiService.isAvailable else {
+            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            showingError = true
+            return
+        }
+
         guard !inputText.isEmpty else {
             errorMessage = "テキストを入力してください"
             showingError = true
@@ -190,6 +225,13 @@ class CreateChecklistViewModel: ObservableObject {
     // MARK: - AI生成
 
     func generateChecklistFromCondition() async {
+        aiService.refreshAvailability()
+        guard aiService.isAvailable else {
+            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            showingError = true
+            return
+        }
+
         guard !conditionText.isEmpty else {
             errorMessage = "条件を入力してください"
             showingError = true
