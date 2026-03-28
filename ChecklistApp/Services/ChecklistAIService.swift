@@ -131,6 +131,8 @@ class ChecklistAIService: ObservableObject {
 
         let sourceDescription: String
         switch source {
+        case .manual:
+            sourceDescription = "手動で入力された"
         case .photo:
             sourceDescription = "写真から抽出された"
         case .voice:

@@ -5,6 +5,7 @@ import UIKit
 import Combine
 
 enum CreateInputMode: String, CaseIterable {
+    case manual
     case photo
     case voice
     case text
@@ -12,6 +13,8 @@ enum CreateInputMode: String, CaseIterable {
 
     var title: String {
         switch self {
+        case .manual:
+            return "手動"
         case .photo:
             return "写真"
         case .voice:
@@ -25,6 +28,8 @@ enum CreateInputMode: String, CaseIterable {
 
     var icon: String {
         switch self {
+        case .manual:
+            return "square.and.pencil"
         case .photo:
             return "camera.fill"
         case .voice:
@@ -252,6 +257,55 @@ class CreateChecklistViewModel: ObservableObject {
         }
 
         isProcessing = false
+    }
+
+    // MARK: - 手動作成
+
+    func createManualChecklist(
+        title: String,
+        category: Category,
+        items: [ChecklistDraft.ItemDraft]
+    ) {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let validItems = items
+            .map { item in
+                ChecklistDraft.ItemDraft(
+                    name: item.name.trimmingCharacters(in: .whitespacesAndNewlines),
+                    note: item.note?.trimmingCharacters(in: .whitespacesAndNewlines),
+                    priority: item.priority,
+                    order: item.order
+                )
+            }
+            .filter { !$0.name.isEmpty }
+            .enumerated()
+            .map { index, item in
+                ChecklistDraft.ItemDraft(
+                    name: item.name,
+                    note: item.note?.isEmpty == true ? nil : item.note,
+                    priority: item.priority,
+                    order: index
+                )
+            }
+
+        guard !trimmedTitle.isEmpty else {
+            errorMessage = "タイトルを入力してください"
+            showingError = true
+            return
+        }
+
+        guard !validItems.isEmpty else {
+            errorMessage = "項目を1件以上追加してください"
+            showingError = true
+            return
+        }
+
+        generatedDraft = ChecklistDraft(
+            title: trimmedTitle,
+            category: category,
+            items: validItems,
+            inputSource: .manual
+        )
+        showingResult = true
     }
 
     // MARK: - リセット

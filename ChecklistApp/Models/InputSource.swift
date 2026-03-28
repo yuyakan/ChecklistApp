@@ -1,6 +1,7 @@
 import Foundation
 
 enum InputSource: String, Codable, CaseIterable {
+    case manual
     case photo
     case voice
     case text
@@ -8,6 +9,8 @@ enum InputSource: String, Codable, CaseIterable {
 
     var description: String {
         switch self {
+        case .manual:
+            return "手動"
         case .photo:
             return "写真"
         case .voice:
@@ -21,6 +24,8 @@ enum InputSource: String, Codable, CaseIterable {
 
     var icon: String {
         switch self {
+        case .manual:
+            return "square.and.pencil"
         case .photo:
             return "camera.fill"
         case .voice:

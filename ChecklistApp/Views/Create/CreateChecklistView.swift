@@ -23,6 +23,8 @@ struct CreateChecklistView: View {
                     ScrollView {
                         VStack(spacing: NeumorphicSpacing.lg) {
                             switch viewModel.selectedMode {
+                            case .manual:
+                                ManualChecklistView(viewModel: viewModel)
                             case .photo:
                                 PhotoInputView(viewModel: viewModel)
                             case .voice:
