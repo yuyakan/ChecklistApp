@@ -94,7 +94,7 @@ class CreateChecklistViewModel: ObservableObject {
     func processSelectedPhoto() async {
         guard let photoItem = selectedPhotoItem else { return }
         aiService.refreshAvailability()
-        guard aiService.isAvailable else {
+        guard !aiService.blocksInteraction else {
             errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
             showingError = true
             selectedPhotoItem = nil
@@ -129,7 +129,7 @@ class CreateChecklistViewModel: ObservableObject {
 
     func processCapturedImage(_ image: UIImage) async {
         aiService.refreshAvailability()
-        guard aiService.isAvailable else {
+        guard !aiService.blocksInteraction else {
             errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
             showingError = true
             return
@@ -160,7 +160,7 @@ class CreateChecklistViewModel: ObservableObject {
 
     func processVoiceInput() async {
         aiService.refreshAvailability()
-        guard aiService.isAvailable else {
+        guard !aiService.blocksInteraction else {
             errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
             showingError = true
             return
@@ -196,7 +196,7 @@ class CreateChecklistViewModel: ObservableObject {
 
     func processTextInput() async {
         aiService.refreshAvailability()
-        guard aiService.isAvailable else {
+        guard !aiService.blocksInteraction else {
             errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
             showingError = true
             return
@@ -231,7 +231,7 @@ class CreateChecklistViewModel: ObservableObject {
 
     func generateChecklistFromCondition() async {
         aiService.refreshAvailability()
-        guard aiService.isAvailable else {
+        guard !aiService.blocksInteraction else {
             errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
             showingError = true
             return

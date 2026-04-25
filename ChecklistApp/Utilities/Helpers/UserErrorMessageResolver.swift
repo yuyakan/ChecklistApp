@@ -13,15 +13,15 @@ enum UserErrorMessageResolver {
         if let aiError = error as? AIServiceError {
             switch aiError {
             case .sessionCreationFailed, .unsupportedDevice:
-                return "このデバイスではAI機能を利用できません。設定アプリでApple Intelligenceの設定、OSバージョン、端末対応状況をご確認ください。"
+                return "このデバイスではAI機能を利用できません。対応デバイス、OSバージョン、言語/地域設定をご確認ください。"
             case .appleIntelligenceNotEnabled:
-                return "Apple IntelligenceがオフのためAI機能を利用できません。設定アプリでApple Intelligenceの設定をご確認ください。"
+                return "Apple IntelligenceがオフのためAI機能を利用できません。設定アプリでApple Intelligenceをオンにしてください。"
             case .modelNotReady:
-                return "AIモデルの準備が完了していません。設定アプリでApple Intelligenceの設定、ネットワーク接続、空き容量をご確認ください。"
+                return "AIモデルを準備中です。ネットワーク接続と空き容量を確認し、しばらくしてから再度お試しください。"
             case .generationFailed(let detail):
                 let normalizedDetail = detail.lowercased()
                 if normalizedDetail.contains("model assets are unavailable") {
-                    return "AIモデルの準備が完了していません。設定アプリでApple Intelligenceの設定、ネットワーク接続、空き容量をご確認ください。"
+                    return "AIモデルを準備中です。ネットワーク接続と空き容量を確認し、しばらくしてから再度お試しください。"
                 }
                 if normalizedDetail.contains("not authenticated") {
                     return "Apple Accountへのサインインが必要です。設定アプリからサインイン状態をご確認ください。"
@@ -31,7 +31,7 @@ enum UserErrorMessageResolver {
                     || normalizedDetail.contains("language") {
                     return "この言語・地域設定ではAI機能を利用できません。設定アプリの言語/地域設定をご確認ください。"
                 }
-                return "チェックリストの生成に失敗しました。通信環境と端末設定をご確認のうえ、再度お試しください。"
+                return "チェックリストの生成に失敗しました。通信環境と端末状況を確認し、再度お試しください。"
             }
         }
 

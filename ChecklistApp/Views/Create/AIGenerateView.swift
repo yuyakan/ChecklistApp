@@ -24,17 +24,14 @@ struct AIGenerateView: View {
             // Suggestions
             suggestionsSection
 
-            // AI availability check
-            if let message = viewModel.aiService.availabilityMessage {
-                AIAvailabilityNoticeCard(message: message)
-            }
+            AIOptimizationHintCard()
 
             // Generate button
             NeumorphicAccentButton(
                 title: "リストを生成",
                 icon: "sparkles",
                 action: generateChecklist,
-                isDisabled: viewModel.conditionText.isEmpty || viewModel.isProcessing || !viewModel.aiService.isAvailable
+                isDisabled: viewModel.conditionText.isEmpty || viewModel.isProcessing || viewModel.aiService.blocksInteraction
             )
 
             // Hint card
@@ -166,28 +163,23 @@ struct SuggestionChipButton: View {
     }
 }
 
-struct AIAvailabilityNoticeCard: View {
-    let message: String
-
+struct AIOptimizationHintCard: View {
     var body: some View {
-        VStack(spacing: NeumorphicSpacing.sm) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.title)
-                .foregroundStyle(Color.statusWarning)
-
-            Text("AI機能は現在利用できません")
+        HStack(spacing: NeumorphicSpacing.sm) {
+            Image(systemName: "sparkles")
                 .font(.subheadline)
-                .foregroundStyle(Color.neumorphicTextSecondary)
+                .foregroundStyle(Color.accentOrangeStart)
 
-            Text(message)
+            Text("利用可能な場合はApple Intelligenceを使用して結果を最適化します。")
                 .font(.caption)
                 .foregroundStyle(Color.neumorphicTextTertiary)
-                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(NeumorphicSpacing.md)
         .frame(maxWidth: .infinity)
-        .background(Color.statusWarning.opacity(0.1))
+        .background(Color.neumorphicSurface)
         .clipShape(RoundedRectangle(cornerRadius: NeumorphicRadius.md))
+        .neumorphicShadow(subtle: true)
     }
 }
 

@@ -10,9 +10,7 @@ struct PhotoInputView: View {
             // Header card
             headerCard
 
-            if let message = viewModel.aiService.availabilityMessage {
-                AIAvailabilityNoticeCard(message: message)
-            }
+            AIOptimizationHintCard()
 
             // Image selection/display card
             imageCard
@@ -85,7 +83,7 @@ struct PhotoInputView: View {
                             title: "カメラ",
                             icon: "camera.fill",
                             isCompact: true,
-                            isDisabled: !viewModel.aiService.isAvailable
+                            isDisabled: false
                         ) {
                             viewModel.showingCamera = true
                         }
@@ -94,7 +92,7 @@ struct PhotoInputView: View {
                             title: "ライブラリ",
                             icon: "photo.on.rectangle",
                             isCompact: true,
-                            isDisabled: !viewModel.aiService.isAvailable
+                            isDisabled: false
                         ) {
                             viewModel.showingImagePicker = true
                         }
@@ -111,7 +109,7 @@ struct PhotoInputView: View {
                         title: "カメラで撮影",
                         icon: "camera.fill",
                         isCompact: false,
-                        isDisabled: !viewModel.aiService.isAvailable
+                        isDisabled: false
                     ) {
                         viewModel.showingCamera = true
                     }
@@ -120,7 +118,7 @@ struct PhotoInputView: View {
                         title: "ライブラリ",
                         icon: "photo.on.rectangle",
                         isCompact: false,
-                        isDisabled: !viewModel.aiService.isAvailable
+                        isDisabled: false
                     ) {
                         viewModel.showingImagePicker = true
                     }

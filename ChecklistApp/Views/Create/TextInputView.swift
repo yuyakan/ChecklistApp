@@ -15,9 +15,7 @@ struct TextInputView: View {
             // Sample chips
             sampleChips
 
-            if let message = viewModel.aiService.availabilityMessage {
-                AIAvailabilityNoticeCard(message: message)
-            }
+            AIOptimizationHintCard()
 
             // Convert button
             NeumorphicAccentButton(
@@ -29,7 +27,7 @@ struct TextInputView: View {
                         await viewModel.processTextInput()
                     }
                 },
-                isDisabled: viewModel.inputText.isEmpty || viewModel.isProcessing || !viewModel.aiService.isAvailable
+                isDisabled: viewModel.inputText.isEmpty || viewModel.isProcessing || viewModel.aiService.blocksInteraction
             )
         }
         .toolbar {
