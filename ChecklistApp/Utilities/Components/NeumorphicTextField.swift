@@ -77,6 +77,7 @@ struct NeumorphicTextEditor: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -101,3 +102,4 @@ struct NeumorphicTextEditor: View {
         .padding()
     }
 }
+#endif

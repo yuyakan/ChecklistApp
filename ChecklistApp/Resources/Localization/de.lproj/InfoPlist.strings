@@ -1,0 +1,5 @@
+"CFBundleDisplayName" = "Checkly";
+"NSCameraUsageDescription" = "Verwendet die Kamera, um aus einem Foto eine Checkliste zu erstellen";
+"NSMicrophoneUsageDescription" = "Verwendet das Mikrofon, um aus Sprache eine Checkliste zu erstellen";
+"NSPhotoLibraryAddUsageDescription" = "Greift auf deine Fotomediathek zu, um aus einem Foto eine Checkliste zu erstellen";
+"NSSpeechRecognitionUsageDescription" = "Verwendet Spracherkennung, um Sprache in Text umzuwandeln und eine Checkliste zu erstellen";

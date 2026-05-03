@@ -86,6 +86,7 @@ struct NeumorphicCircularProgress: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -102,3 +103,4 @@ struct NeumorphicCircularProgress: View {
         }
     }
 }
+#endif

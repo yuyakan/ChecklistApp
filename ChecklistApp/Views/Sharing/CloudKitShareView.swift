@@ -38,7 +38,7 @@ struct CloudKitShareButton: View {
             // Check iCloud availability
             let status = try await stack.ckContainer.accountStatus()
             guard status == .available else {
-                errorMessage = "iCloudにサインインしてください"
+                errorMessage = L10n.tr("iCloudにサインインしてください")
                 showingError = true
                 return
             }
@@ -198,7 +198,7 @@ struct SharedChecklistRow: View {
                     HStack(spacing: NeumorphicSpacing.xs) {
                         Image(systemName: "person.fill")
                             .font(.caption)
-                        Text((checklist.ownerName ?? "").isEmpty ? "不明" : (checklist.ownerName ?? "不明"))
+                        Text((checklist.ownerName ?? "").isEmpty ? L10n.tr("不明") : (checklist.ownerName ?? L10n.tr("不明")))
                             .font(.caption)
                     }
                     .foregroundStyle(Color.neumorphicTextTertiary)
@@ -207,7 +207,7 @@ struct SharedChecklistRow: View {
                 Spacer()
 
                 // Progress indicator
-                Text("\(checklist.completedCount)/\(checklist.totalCount)")
+                Text(L10n.progressFraction(completed: checklist.completedCount, total: checklist.totalCount))
                     .font(.caption)
                     .monospacedDigit()
                     .foregroundStyle(Color.neumorphicTextSecondary)
@@ -243,8 +243,10 @@ struct ShareStatusBadge: View {
     }
 }
 
+#if false
 #Preview {
     NavigationStack {
         SharedChecklistsView()
     }
 }
+#endif

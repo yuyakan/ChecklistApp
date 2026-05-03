@@ -24,7 +24,7 @@ struct ManualChecklistView: View {
             itemsCard
 
             NeumorphicAccentButton(
-                title: "プレビュー",
+                title: L10n.tr("プレビュー"),
                 icon: "checklist",
                 action: createChecklist,
                 isDisabled: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || items.isEmpty
@@ -71,7 +71,7 @@ struct ManualChecklistView: View {
                     .foregroundStyle(Color.neumorphicTextTertiary)
 
                 NeumorphicTextField(
-                    placeholder: "例: 出張の持ち物",
+                    placeholder: L10n.tr("例: 出張の持ち物"),
                     text: $title,
                     icon: "text.alignleft"
                 )
@@ -79,7 +79,7 @@ struct ManualChecklistView: View {
             }
 
             VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
-                Text("カテゴリ")
+                Text(L10n.tr("カテゴリ"))
                     .font(.caption)
                     .foregroundStyle(Color.neumorphicTextTertiary)
 
@@ -109,14 +109,14 @@ struct ManualChecklistView: View {
                 .foregroundStyle(Color.neumorphicTextPrimary)
 
             NeumorphicTextField(
-                placeholder: "項目名",
+                placeholder: L10n.tr("項目名"),
                 text: $newItemName,
                 icon: "checkmark.circle"
             )
             .focused($focusedField, equals: .itemName)
 
             NeumorphicTextField(
-                placeholder: "メモ（任意）",
+                placeholder: L10n.tr("メモ（任意）"),
                 text: $newItemNote,
                 icon: "note.text"
             )
@@ -144,7 +144,7 @@ struct ManualChecklistView: View {
             }
 
             NeumorphicAccentButton(
-                title: "項目を追加",
+                title: L10n.tr("項目を追加"),
                 icon: "plus",
                 action: addItem,
                 isDisabled: newItemName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -166,7 +166,7 @@ struct ManualChecklistView: View {
 
                 Spacer()
 
-                Text("\(items.count)件")
+                Text(L10n.checklistCount(items.count))
                     .font(.caption)
                     .foregroundStyle(Color.neumorphicTextTertiary)
             }
@@ -276,6 +276,7 @@ struct ManualChecklistView: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -285,3 +286,4 @@ struct ManualChecklistView: View {
         }
     }
 }
+#endif

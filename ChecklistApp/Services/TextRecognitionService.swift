@@ -11,11 +11,11 @@ enum TextRecognitionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidImage:
-            return "画像を読み込めませんでした"
+            return L10n.tr("画像を読み込めませんでした")
         case .recognitionFailed:
-            return "テキスト認識に失敗しました"
+            return L10n.tr("テキスト認識に失敗しました")
         case .noTextFound:
-            return "画像からテキストを検出できませんでした"
+            return L10n.tr("画像からテキストを検出できませんでした")
         }
     }
 }
@@ -59,8 +59,7 @@ class TextRecognitionService: ObservableObject {
                 continuation.resume(returning: text)
             }
 
-            // 日本語と英語の認識に対応
-            request.recognitionLanguages = ["ja-JP", "en-US"]
+            request.recognitionLanguages = AppLanguage.current.visionRecognitionLanguages
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
 

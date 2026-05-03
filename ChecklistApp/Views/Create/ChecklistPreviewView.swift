@@ -89,25 +89,25 @@ struct ChecklistPreviewView: View {
 
     private var titleCard: some View {
         VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
-            Text("基本情報")
+            Text(L10n.tr("基本情報"))
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.neumorphicTextPrimary)
 
             VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
-                Text("タイトル")
+                Text(L10n.tr("タイトル"))
                     .font(.caption)
                     .foregroundStyle(Color.neumorphicTextTertiary)
 
                 NeumorphicTextField(
-                    placeholder: "タイトル",
+                    placeholder: L10n.tr("タイトル"),
                     text: $editingTitle,
                     icon: "text.alignleft"
                 )
             }
 
             VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
-                Text("カテゴリ")
+                Text(L10n.tr("カテゴリ"))
                     .font(.caption)
                     .foregroundStyle(Color.neumorphicTextTertiary)
 
@@ -139,7 +139,7 @@ struct ChecklistPreviewView: View {
 
                 Spacer()
 
-                Text("\(draft.items.count)件")
+                Text(L10n.checklistCount(draft.items.count))
                     .font(.subheadline)
                     .foregroundStyle(Color.neumorphicTextTertiary)
 
@@ -215,7 +215,7 @@ struct ChecklistPreviewView: View {
                                 .foregroundStyle(Color.neumorphicTextTertiary)
 
                             NeumorphicTextField(
-                                placeholder: "項目名",
+                                placeholder: L10n.tr("項目名"),
                                 text: $editingItemName,
                                 icon: "checkmark.circle"
                             )
@@ -228,7 +228,7 @@ struct ChecklistPreviewView: View {
                                 .foregroundStyle(Color.neumorphicTextTertiary)
 
                             NeumorphicTextField(
-                                placeholder: "補足説明",
+                                placeholder: L10n.tr("補足説明"),
                                 text: $editingItemNote,
                                 icon: "note.text"
                             )
@@ -362,7 +362,7 @@ struct PreviewDeleteItemsSheet: View {
                     // Select all / deselect all
                     HStack {
                         let allSelected = selectedIDs.count == items.count
-                        Button(allSelected ? "全解除" : "全選択") {
+                        Button(allSelected ? L10n.tr("すべて解除") : L10n.tr("すべて選択")) {
                             if allSelected {
                                 selectedIDs.removeAll()
                             } else {
@@ -374,7 +374,7 @@ struct PreviewDeleteItemsSheet: View {
                         Spacer()
 
                         if !selectedIDs.isEmpty {
-                            Text("\(selectedIDs.count)件選択中")
+                            Text(L10n.selectedCount(selectedIDs.count))
                                 .font(.subheadline)
                                 .foregroundStyle(Color.neumorphicTextTertiary)
                         }
@@ -440,7 +440,7 @@ struct PreviewDeleteItemsSheet: View {
                         } label: {
                             HStack {
                                 Image(systemName: "trash")
-                                Text("削除（\(selectedIDs.count)件）")
+                                Text(L10n.deleteItemsButtonTitle(selectedIDs.count))
                             }
                             .font(.subheadline)
                             .fontWeight(.semibold)
@@ -476,7 +476,7 @@ struct PreviewDeleteItemsSheet: View {
                 }
                 Button("キャンセル", role: .cancel) {}
             } message: {
-                Text("\(selectedIDs.count)件のアイテムを削除しますか？")
+                Text(L10n.deleteItemsConfirmation(selectedIDs.count))
             }
         }
         .presentationDetents([.medium, .large])

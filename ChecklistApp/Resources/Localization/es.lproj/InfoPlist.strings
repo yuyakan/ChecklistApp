@@ -1,0 +1,5 @@
+"CFBundleDisplayName" = "Checkly";
+"NSCameraUsageDescription" = "Usa la cámara para crear una lista a partir de una foto";
+"NSMicrophoneUsageDescription" = "Usa el micrófono para crear una lista a partir de la voz";
+"NSPhotoLibraryAddUsageDescription" = "Accede a tu fototeca para crear una lista a partir de una foto";
+"NSSpeechRecognitionUsageDescription" = "Usa el reconocimiento de voz para convertir la voz en texto y crear una lista";

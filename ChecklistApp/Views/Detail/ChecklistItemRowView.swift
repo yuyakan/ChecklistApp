@@ -103,7 +103,7 @@ struct ChecklistItemRowView: View {
                             .foregroundStyle(Color.neumorphicTextSecondary)
 
                         NeumorphicTextField(
-                            placeholder: "項目を入力...",
+                            placeholder: L10n.tr("項目を入力..."),
                             text: $editingName,
                             icon: "checklist"
                         )
@@ -117,7 +117,7 @@ struct ChecklistItemRowView: View {
                             .foregroundStyle(Color.neumorphicTextSecondary)
 
                         NeumorphicTextField(
-                            placeholder: "メモを入力...",
+                            placeholder: L10n.tr("メモを入力..."),
                             text: $editingNote,
                             icon: "note.text"
                         )
@@ -170,7 +170,7 @@ struct ChecklistItemRowView: View {
                                     .fontWeight(.medium)
                                     .foregroundStyle(Color.neumorphicTextPrimary)
 
-                                Text(item.isCompleted ? "完了済み" : "未完了")
+                                Text(item.isCompleted ? L10n.tr("完了済み") : L10n.tr("未完了"))
                                     .font(.caption)
                                     .foregroundStyle(Color.neumorphicTextTertiary)
                             }
@@ -188,7 +188,7 @@ struct ChecklistItemRowView: View {
 
                     // Save button
                     NeumorphicButton_Unified(
-                        title: "保存",
+                        title: L10n.tr("保存"),
                         style: .accent,
                         isEnabled: !editingName.isEmpty
                     ) {

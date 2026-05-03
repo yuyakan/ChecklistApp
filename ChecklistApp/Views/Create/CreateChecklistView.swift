@@ -57,7 +57,7 @@ struct CreateChecklistView: View {
             .alert("エラー", isPresented: $viewModel.showingError) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text(viewModel.errorMessage ?? "不明なエラーが発生しました")
+                Text(viewModel.errorMessage ?? L10n.tr("不明なエラーが発生しました"))
             }
             .sheet(isPresented: $viewModel.showingResult) {
                 if let draft = viewModel.generatedDraft {

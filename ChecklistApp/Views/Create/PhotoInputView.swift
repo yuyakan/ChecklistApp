@@ -80,7 +80,7 @@ struct PhotoInputView: View {
                     // 変更ボタン（2つ横並び）
                     HStack(spacing: NeumorphicSpacing.sm) {
                         PhotoSourceButton(
-                            title: "カメラ",
+                            title: L10n.tr("カメラ"),
                             icon: "camera.fill",
                             isCompact: true,
                             isDisabled: false
@@ -89,7 +89,7 @@ struct PhotoInputView: View {
                         }
 
                         PhotoSourceButton(
-                            title: "ライブラリ",
+                            title: L10n.tr("ライブラリ"),
                             icon: "photo.on.rectangle",
                             isCompact: true,
                             isDisabled: false
@@ -106,7 +106,7 @@ struct PhotoInputView: View {
                 // 初期状態: カメラとフォトライブラリの2つのボタン
                 HStack(spacing: NeumorphicSpacing.md) {
                     PhotoSourceButton(
-                        title: "カメラで撮影",
+                        title: L10n.tr("カメラで撮影"),
                         icon: "camera.fill",
                         isCompact: false,
                         isDisabled: false
@@ -115,7 +115,7 @@ struct PhotoInputView: View {
                     }
 
                     PhotoSourceButton(
-                        title: "ライブラリ",
+                        title: L10n.tr("ライブラリ"),
                         icon: "photo.on.rectangle",
                         isCompact: false,
                         isDisabled: false
@@ -289,7 +289,7 @@ class CameraOverlayView: UIView {
     // フラッシュラベル
     private let flashLabel: UILabel = {
         let label = UILabel()
-        label.text = "自動"
+        label.text = L10n.tr("自動")
         label.font = .systemFont(ofSize: 12)
         label.textColor = .white
         return label
@@ -408,19 +408,19 @@ class CameraOverlayView: UIView {
         switch mode {
         case .auto:
             imageName = "bolt.badge.automatic.fill"
-            labelText = "自動"
+            labelText = L10n.tr("自動")
             tintColor = .yellow
         case .on:
             imageName = "bolt.fill"
-            labelText = "オン"
+            labelText = L10n.tr("オン")
             tintColor = .yellow
         case .off:
             imageName = "bolt.slash.fill"
-            labelText = "オフ"
+            labelText = L10n.tr("オフ")
             tintColor = .white
         @unknown default:
             imageName = "bolt.badge.automatic.fill"
-            labelText = "自動"
+            labelText = L10n.tr("自動")
             tintColor = .yellow
         }
 
@@ -470,6 +470,7 @@ struct PhotoSourceButton: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -479,3 +480,4 @@ struct PhotoSourceButton: View {
         }
     }
 }
+#endif

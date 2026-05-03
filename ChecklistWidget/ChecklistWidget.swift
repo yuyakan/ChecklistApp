@@ -438,7 +438,7 @@ struct AccessoryRectangularView: View {
                 }
                 .gaugeStyle(.accessoryLinear)
 
-                Text("\(checklist.completedCount)/\(checklist.totalCount) 完了")
+                Text(L10n.completedSummary(completed: checklist.completedCount, total: checklist.totalCount))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -462,7 +462,7 @@ struct AccessoryInlineView: View {
 
     var body: some View {
         if let checklist = entry.checklist {
-            Label("\(checklist.title): \(checklist.completedCount)/\(checklist.totalCount)", systemImage: checklist.categoryIcon)
+            Label("\(checklist.title): \(L10n.progressFraction(completed: checklist.completedCount, total: checklist.totalCount))", systemImage: checklist.categoryIcon)
         } else {
             Label("すべて完了", systemImage: "checkmark.circle.fill")
         }
@@ -496,7 +496,7 @@ struct SmallWidgetView: View {
                 ProgressView(value: checklist.progress)
                     .tint(progressColor(for: checklist.progress))
 
-                Text("\(checklist.completedCount)/\(checklist.totalCount) 完了")
+                Text(L10n.completedSummary(completed: checklist.completedCount, total: checklist.totalCount))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -545,7 +545,7 @@ struct MediumWidgetView: View {
                     }
 
                     if checklist.items.count > 3 {
-                        Text("他 \(checklist.items.count - 3) 件...")
+                        Text(L10n.moreItemsEllipsis(checklist.items.count - 3))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -595,7 +595,7 @@ struct LargeWidgetView: View {
                             ProgressView(value: checklist.progress)
                                 .tint(progressColor(for: checklist.progress))
 
-                            Text("\(checklist.completedCount)/\(checklist.totalCount)")
+                            Text(L10n.progressFraction(completed: checklist.completedCount, total: checklist.totalCount))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 40)
@@ -614,7 +614,7 @@ struct LargeWidgetView: View {
                         if checklist.items.count > maxVisibleItems {
                             HStack {
                                 Spacer()
-                                Text("他 \(checklist.items.count - maxVisibleItems) 件")
+                                Text(L10n.moreItems(checklist.items.count - maxVisibleItems))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()
@@ -720,7 +720,7 @@ struct NavigationButtons: View {
                 }
                 .buttonStyle(.plain)
 
-                Text("\(current + 1)/\(total)")
+                Text(L10n.pageIndicator(current: current + 1, total: total))
                     .font(compact ? .caption2 : .caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -840,7 +840,7 @@ struct ChecklistLiveActivity: Widget {
                     .font(.caption2)
             } compactTrailing: {
                 // コンパクト表示: 進捗
-                Text("\(context.state.completedCount)/\(context.state.totalCount)")
+                Text(L10n.progressFraction(completed: context.state.completedCount, total: context.state.totalCount))
                     .font(.caption2)
                     .monospacedDigit()
             } minimal: {
@@ -904,7 +904,7 @@ struct LiveActivityBannerView: View {
 
                     Spacer()
 
-                    Text("\(context.state.completedCount)/\(context.state.totalCount)")
+                    Text(L10n.progressFraction(completed: context.state.completedCount, total: context.state.totalCount))
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                 }
@@ -929,7 +929,7 @@ struct LiveActivityBannerView: View {
                 }
 
                 if context.state.totalCount > WidgetConstants.maxDisplayItems {
-                    Text("他 \(context.state.totalCount - WidgetConstants.maxDisplayItems) 件...")
+                    Text(L10n.moreItemsEllipsis(context.state.totalCount - WidgetConstants.maxDisplayItems))
                         .font(.system(size: 9))
                         .foregroundStyle(.secondary)
                 }
@@ -976,6 +976,7 @@ struct ChecklistWidgetBundle: WidgetBundle {
 
 // MARK: - Previews
 
+#if false
 #Preview("Small", as: .systemSmall) {
     ChecklistWidget()
 } timeline: {
@@ -1057,3 +1058,4 @@ struct ChecklistWidgetBundle: WidgetBundle {
         totalCount: 0
     )
 }
+#endif

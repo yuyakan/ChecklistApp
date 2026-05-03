@@ -295,7 +295,7 @@ struct ChecklistDetailView: View {
 
                 Spacer()
 
-                Text("\(checklist.sortedItems.count)件")
+                Text(L10n.checklistCount(checklist.sortedItems.count))
                     .font(.subheadline)
                     .foregroundStyle(Color.neumorphicTextTertiary)
 
@@ -372,7 +372,7 @@ struct ChecklistDetailView: View {
 
     private var infoCard: some View {
         VStack(alignment: .leading, spacing: NeumorphicSpacing.sm) {
-            Text("情報")
+            Text(L10n.tr("情報"))
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.neumorphicTextPrimary)
@@ -383,12 +383,12 @@ struct ChecklistDetailView: View {
                 .padding(.horizontal, NeumorphicSpacing.md)
 
             VStack(spacing: NeumorphicSpacing.sm) {
-                infoRow(label: "カテゴリ", value: checklist.category.description, icon: checklist.category.icon)
-                infoRow(label: "作成方法", value: checklist.inputSource.description, icon: checklist.inputSource.icon)
-                infoRow(label: "作成日", value: checklist.wrappedCreatedAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "calendar")
-                infoRow(label: "更新日", value: checklist.wrappedUpdatedAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "clock")
+                infoRow(label: L10n.tr("カテゴリ"), value: checklist.category.description, icon: checklist.category.icon)
+                infoRow(label: L10n.tr("作成方法"), value: checklist.inputSource.description, icon: checklist.inputSource.icon)
+                infoRow(label: L10n.tr("作成日"), value: checklist.wrappedCreatedAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "calendar")
+                infoRow(label: L10n.tr("更新日"), value: checklist.wrappedUpdatedAt.formatted(.dateTime.year().month(.defaultDigits).day()), icon: "clock")
                 if checklist.isShared {
-                    infoRow(label: "共有状態", value: "共有中", icon: "person.2.fill")
+                    infoRow(label: L10n.tr("共有状態"), value: L10n.tr("共有中"), icon: "person.2.fill")
                 }
             }
             .padding(.horizontal, NeumorphicSpacing.md)
@@ -442,7 +442,7 @@ struct AddItemSheet: View {
                             .foregroundStyle(Color.neumorphicTextSecondary)
 
                         NeumorphicTextField(
-                            placeholder: "項目を入力...",
+                            placeholder: L10n.tr("項目を入力..."),
                             text: $viewModel.newItemName,
                             icon: "checklist"
                         )
@@ -456,7 +456,7 @@ struct AddItemSheet: View {
                             .foregroundStyle(Color.neumorphicTextSecondary)
 
                         NeumorphicTextField(
-                            placeholder: "メモを入力...",
+                            placeholder: L10n.tr("メモを入力..."),
                             text: $viewModel.itemNote,
                             icon: "note.text"
                         )
@@ -492,7 +492,7 @@ struct AddItemSheet: View {
 
                     // Add button
                     NeumorphicButton_Unified(
-                        title: "追加",
+                        title: L10n.tr("追加"),
                         style: .accent,
                         isEnabled: !viewModel.newItemName.isEmpty
                     ) {
@@ -535,7 +535,7 @@ struct DeleteItemsSheet: View {
                     // Select all / deselect all
                     HStack {
                         let allSelected = viewModel.selectedItemIDs.count == viewModel.checklist.sortedItems.count
-                        Button(allSelected ? "全解除" : "全選択") {
+                        Button(allSelected ? L10n.tr("すべて解除") : L10n.tr("すべて選択")) {
                             if allSelected {
                                 viewModel.deselectAll()
                             } else {
@@ -547,7 +547,7 @@ struct DeleteItemsSheet: View {
                         Spacer()
 
                         if !viewModel.selectedItemIDs.isEmpty {
-                            Text("\(viewModel.selectedItemIDs.count)件選択中")
+                            Text(L10n.selectedCount(viewModel.selectedItemIDs.count))
                                 .font(.subheadline)
                                 .foregroundStyle(Color.neumorphicTextTertiary)
                         }
@@ -609,7 +609,7 @@ struct DeleteItemsSheet: View {
                         } label: {
                             HStack {
                                 Image(systemName: "trash")
-                                Text("削除（\(viewModel.selectedItemIDs.count)件）")
+                                Text(L10n.deleteItemsButtonTitle(viewModel.selectedItemIDs.count))
                             }
                             .font(.subheadline)
                             .fontWeight(.semibold)
@@ -645,7 +645,7 @@ struct DeleteItemsSheet: View {
                 }
                 Button("キャンセル", role: .cancel) {}
             } message: {
-                Text("\(viewModel.selectedItemIDs.count)件のアイテムを削除しますか？")
+                Text(L10n.deleteItemsConfirmation(viewModel.selectedItemIDs.count))
             }
         }
         .presentationDetents([.medium, .large])

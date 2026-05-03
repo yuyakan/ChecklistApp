@@ -35,6 +35,7 @@ struct NeumorphicCard<Content: View>: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -52,3 +53,4 @@ struct NeumorphicCard<Content: View>: View {
         .padding()
     }
 }
+#endif

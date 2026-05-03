@@ -24,11 +24,11 @@ struct SettingsView: View {
                     .padding(NeumorphicSpacing.md)
                 }
             }
-            .navigationTitle("設定")
+            .navigationTitle(L10n.tr("設定"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完了") {
+                    Button(L10n.tr("完了")) {
                         dismiss()
                     }
                     .fontWeight(.medium)
@@ -40,7 +40,7 @@ struct SettingsView: View {
 
     private var cloudKitCard: some View {
         VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
-            Label("iCloud共有", systemImage: "icloud.fill")
+            Label(L10n.tr("iCloud共有"), systemImage: "icloud.fill")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.neumorphicTextPrimary)
@@ -50,10 +50,10 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     VStack(alignment: .leading, spacing: NeumorphicSpacing.xxs) {
-                        Text("共有されたリスト")
+                        Text(L10n.tr("共有されたリスト"))
                             .font(.subheadline)
                             .foregroundStyle(Color.neumorphicTextPrimary)
-                        Text("他のユーザーから共有されたチェックリストを表示")
+                        Text(L10n.tr("他のユーザーから共有されたチェックリストを表示"))
                             .font(.caption)
                             .foregroundStyle(Color.neumorphicTextTertiary)
                     }
@@ -68,7 +68,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            Text("チェックリストを他のiCloudユーザーと共有できます。詳細画面のメニューから「iCloudで共有」を選択してください。")
+            Text(L10n.tr("チェックリストを他のiCloudユーザーと共有できます。詳細画面のメニューから「iCloudで共有」を選択してください。"))
                 .font(.caption)
                 .foregroundStyle(Color.neumorphicTextTertiary)
         }
@@ -80,19 +80,19 @@ struct SettingsView: View {
 
     private var appearanceCard: some View {
         VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
-            Label("外観", systemImage: "paintbrush.fill")
+            Label(L10n.tr("外観"), systemImage: "paintbrush.fill")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.neumorphicTextPrimary)
 
             VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
-                Text("テーマ")
+                Text(L10n.tr("テーマ"))
                     .font(.caption)
                     .foregroundStyle(Color.neumorphicTextTertiary)
 
                 HStack(spacing: NeumorphicSpacing.sm) {
                     ThemeOptionButton(
-                        title: "自動",
+                        title: L10n.tr("自動"),
                         icon: "gearshape",
                         isSelected: appearanceMode == "system"
                     ) {
@@ -100,7 +100,7 @@ struct SettingsView: View {
                     }
 
                     ThemeOptionButton(
-                        title: "ライト",
+                        title: L10n.tr("ライト"),
                         icon: "sun.max.fill",
                         isSelected: appearanceMode == "light"
                     ) {
@@ -108,7 +108,7 @@ struct SettingsView: View {
                     }
 
                     ThemeOptionButton(
-                        title: "ダーク",
+                        title: L10n.tr("ダーク"),
                         icon: "moon.fill",
                         isSelected: appearanceMode == "dark"
                     ) {
@@ -117,7 +117,7 @@ struct SettingsView: View {
                 }
             }
 
-            Text("アプリの外観モードを設定します")
+            Text(L10n.tr("アプリの外観モードを設定します"))
                 .font(.caption)
                 .foregroundStyle(Color.neumorphicTextTertiary)
         }
@@ -129,13 +129,13 @@ struct SettingsView: View {
 
     private var defaultSettingsCard: some View {
         VStack(alignment: .leading, spacing: NeumorphicSpacing.md) {
-            Label("デフォルト設定", systemImage: "slider.horizontal.3")
+            Label(L10n.tr("デフォルト設定"), systemImage: "slider.horizontal.3")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.neumorphicTextPrimary)
 
             VStack(alignment: .leading, spacing: NeumorphicSpacing.xs) {
-                Text("デフォルトカテゴリ")
+                Text(L10n.tr("デフォルトカテゴリ"))
                     .font(.caption)
                     .foregroundStyle(Color.neumorphicTextTertiary)
 
@@ -155,7 +155,7 @@ struct SettingsView: View {
                 }
             }
 
-            Text("新規チェックリスト作成時のデフォルトカテゴリを設定します")
+            Text(L10n.tr("新規チェックリスト作成時のデフォルトカテゴリを設定します"))
                 .font(.caption)
                 .foregroundStyle(Color.neumorphicTextTertiary)
         }
@@ -262,6 +262,8 @@ extension View {
     }
 }
 
+#if false
 #Preview {
     SettingsView()
 }
+#endif

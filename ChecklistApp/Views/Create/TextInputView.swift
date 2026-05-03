@@ -19,7 +19,7 @@ struct TextInputView: View {
 
             // Convert button
             NeumorphicAccentButton(
-                title: "チェックリストに変換",
+                title: L10n.tr("チェックリストに変換"),
                 icon: "sparkles",
                 action: {
                     isTextFieldFocused = false
@@ -92,7 +92,7 @@ struct TextInputView: View {
 
             NeumorphicTextEditor(
                 text: $viewModel.inputText,
-                placeholder: "例：\n・牛乳\n・卵\n・パン\n\nまたは\n\n牛乳、卵、パン、バター"
+                placeholder: L10n.tr("例：\n・牛乳\n・卵\n・パン\n\nまたは\n\n牛乳、卵、パン、バター")
             )
             .focused($isTextFieldFocused)
         }
@@ -109,23 +109,23 @@ struct TextInputView: View {
                 .foregroundStyle(Color.neumorphicTextTertiary)
 
             HStack(spacing: NeumorphicSpacing.sm) {
-                SampleChipButton(title: "買い物リスト", icon: "cart") {
-                    viewModel.inputText = """
+                SampleChipButton(title: L10n.tr("買い物リスト"), icon: "cart") {
+                    viewModel.inputText = L10n.tr("""
                     今日買うもの
                     - 牛乳 1本
                     - 卵 1パック
                     - 食パン
                     - バター
                     - ヨーグルト
-                    """
+                    """)
                 }
 
-                SampleChipButton(title: "レシピ", icon: "frying.pan") {
-                    viewModel.inputText = """
+                SampleChipButton(title: L10n.tr("レシピ"), icon: "frying.pan") {
+                    viewModel.inputText = L10n.tr("""
                     カレーの材料（4人分）
                     玉ねぎ 2個、にんじん 1本、じゃがいも 3個、
                     豚肉 300g、カレールー 1箱、水 800ml
-                    """
+                    """)
                 }
             }
         }
@@ -160,6 +160,7 @@ struct SampleChipButton: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -169,3 +170,4 @@ struct SampleChipButton: View {
         }
     }
 }
+#endif

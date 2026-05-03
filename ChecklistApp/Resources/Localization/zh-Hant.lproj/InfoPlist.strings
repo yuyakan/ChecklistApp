@@ -1,0 +1,5 @@
+"CFBundleDisplayName" = "Checkly";
+"NSCameraUsageDescription" = "使用相機從照片建立清單";
+"NSMicrophoneUsageDescription" = "使用麥克風透過語音建立清單";
+"NSPhotoLibraryAddUsageDescription" = "存取照片圖庫以從照片建立清單";
+"NSSpeechRecognitionUsageDescription" = "使用語音辨識將語音轉成文字並建立清單";

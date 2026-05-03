@@ -10,15 +10,15 @@ enum InputSource: String, Codable, CaseIterable {
     var description: String {
         switch self {
         case .manual:
-            return "手動"
+            return L10n.tr("手動")
         case .photo:
-            return "写真"
+            return L10n.tr("写真")
         case .voice:
-            return "音声"
+            return L10n.tr("音声")
         case .text:
-            return "テキスト"
+            return L10n.tr("テキスト")
         case .aiGenerated:
-            return "自動"
+            return L10n.tr("自動")
         }
     }
 
@@ -46,11 +46,11 @@ enum Priority: String, Codable, CaseIterable {
     var description: String {
         switch self {
         case .high:
-            return "高"
+            return L10n.tr("高")
         case .medium:
-            return "中"
+            return L10n.tr("中")
         case .low:
-            return "低"
+            return L10n.tr("低")
         }
     }
 
@@ -88,17 +88,17 @@ enum Category: String, Codable, CaseIterable {
     var description: String {
         switch self {
         case .shopping:
-            return "買い物"
+            return L10n.tr("買い物")
         case .task:
-            return "タスク"
+            return L10n.tr("タスク")
         case .procedure:
-            return "手続き"
+            return L10n.tr("手続き")
         case .travel:
-            return "旅行"
+            return L10n.tr("旅行")
         case .cooking:
-            return "料理"
+            return L10n.tr("料理")
         case .other:
-            return "その他"
+            return L10n.tr("その他")
         }
     }
 

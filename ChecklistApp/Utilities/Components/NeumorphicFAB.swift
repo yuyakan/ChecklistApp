@@ -49,6 +49,7 @@ struct NeumorphicFAB: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -63,3 +64,4 @@ struct NeumorphicFAB: View {
         }
     }
 }
+#endif

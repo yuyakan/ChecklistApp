@@ -13,13 +13,13 @@ enum CloudKitError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sharingFailed:
-            return "共有に失敗しました"
+            return L10n.tr("共有に失敗しました")
         case .fetchFailed:
-            return "データの取得に失敗しました"
+            return L10n.tr("データの取得に失敗しました")
         case .notAuthenticated:
-            return "iCloudにサインインしてください"
+            return L10n.tr("iCloudにサインインしてください")
         case .containerNotFound:
-            return "CloudKitコンテナが見つかりません"
+            return L10n.tr("CloudKitコンテナが見つかりません")
         }
     }
 }

@@ -5,12 +5,12 @@ struct AIGenerateView: View {
     @FocusState private var isTextFieldFocused: Bool
 
     private let suggestions = [
-        "カレーの材料",
-        "引っ越しで必要な手続き",
-        "キャンプの持ち物",
-        "旅行の準備リスト",
-        "大掃除のチェックリスト",
-        "新生活に必要なもの"
+        L10n.tr("カレーの材料"),
+        L10n.tr("引っ越しで必要な手続き"),
+        L10n.tr("キャンプの持ち物"),
+        L10n.tr("旅行の準備リスト"),
+        L10n.tr("大掃除のチェックリスト"),
+        L10n.tr("新生活に必要なもの")
     ]
 
     var body: some View {
@@ -28,7 +28,7 @@ struct AIGenerateView: View {
 
             // Generate button
             NeumorphicAccentButton(
-                title: "リストを生成",
+                title: L10n.tr("リストを生成"),
                 icon: "sparkles",
                 action: generateChecklist,
                 isDisabled: viewModel.conditionText.isEmpty || viewModel.isProcessing || viewModel.aiService.blocksInteraction
@@ -81,7 +81,7 @@ struct AIGenerateView: View {
                 .foregroundStyle(Color.neumorphicTextSecondary)
 
             NeumorphicTextField(
-                placeholder: "例: カレーの材料、引っ越しの手続き...",
+                placeholder: L10n.tr("例: カレーの材料、引っ越しの手続き..."),
                 text: $viewModel.conditionText,
                 icon: "sparkles"
             )
@@ -183,6 +183,7 @@ struct AIOptimizationHintCard: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -192,3 +193,4 @@ struct AIOptimizationHintCard: View {
         }
     }
 }
+#endif

@@ -46,7 +46,7 @@ struct HomeView: View {
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $viewModel.searchText, prompt: "検索")
+            .searchable(text: $viewModel.searchText, prompt: Text("検索"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
@@ -111,7 +111,7 @@ struct HomeView: View {
                 }
                 Button("キャンセル", role: .cancel) {}
             } message: {
-                Text("\(viewModel.selectedChecklistIDs.count)件のチェックリストを削除しますか？この操作は取り消せません。")
+                Text(L10n.deleteChecklistsConfirmation(viewModel.selectedChecklistIDs.count))
             }
             .navigationDestination(for: NSManagedObjectID.self) { objectID in
                 if let checklist = viewContext.object(with: objectID) as? CDChecklist {

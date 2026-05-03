@@ -20,7 +20,7 @@ struct VoiceInputView: View {
             if !viewModel.speechRecognitionService.transcribedText.isEmpty
                 && !viewModel.speechRecognitionService.isRecording {
                 NeumorphicAccentButton(
-                    title: "チェックリストに変換",
+                    title: L10n.tr("チェックリストに変換"),
                     icon: "sparkles",
                     action: {
                         Task {
@@ -108,7 +108,7 @@ struct VoiceInputView: View {
             }
             .buttonStyle(.plain)
 
-            Text(viewModel.speechRecognitionService.isRecording ? "タップして停止" : "タップして録音開始")
+            Text(viewModel.speechRecognitionService.isRecording ? L10n.tr("タップして停止") : L10n.tr("タップして録音開始"))
                 .font(.subheadline)
                 .foregroundStyle(Color.neumorphicTextSecondary)
                 .frame(height: 20)
@@ -141,7 +141,7 @@ struct VoiceInputView: View {
             }
 
             Text(viewModel.speechRecognitionService.transcribedText.isEmpty
-                ? "音声を認識すると、ここに表示されます"
+                ? L10n.tr("音声を認識すると、ここに表示されます")
                 : viewModel.speechRecognitionService.transcribedText)
                 .font(.body)
                 .foregroundStyle(
@@ -188,6 +188,7 @@ struct VoiceInputView: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -197,3 +198,4 @@ struct VoiceInputView: View {
         }
     }
 }
+#endif

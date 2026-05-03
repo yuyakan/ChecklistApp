@@ -10,10 +10,11 @@ extension Date {
     }
 
     var relativeDescription: String {
+        let time = formatted(date: .omitted, time: .shortened)
         if isToday {
-            return "今日 \(formatted(date: .omitted, time: .shortened))"
+            return L10n.todayPrefix(time: time)
         } else if isYesterday {
-            return "昨日 \(formatted(date: .omitted, time: .shortened))"
+            return L10n.yesterdayPrefix(time: time)
         } else {
             return formatted(date: .abbreviated, time: .shortened)
         }

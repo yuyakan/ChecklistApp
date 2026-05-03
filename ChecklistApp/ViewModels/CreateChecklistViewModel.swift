@@ -14,15 +14,15 @@ enum CreateInputMode: String, CaseIterable {
     var title: String {
         switch self {
         case .manual:
-            return "手動"
+            return L10n.tr("手動")
         case .photo:
-            return "写真"
+            return L10n.tr("写真")
         case .voice:
-            return "音声"
+            return L10n.tr("音声")
         case .text:
-            return "テキスト"
+            return L10n.tr("テキスト")
         case .aiGenerate:
-            return "自動"
+            return L10n.tr("自動")
         }
     }
 
@@ -95,7 +95,7 @@ class CreateChecklistViewModel: ObservableObject {
         guard let photoItem = selectedPhotoItem else { return }
         aiService.refreshAvailability()
         guard !aiService.blocksInteraction else {
-            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            errorMessage = aiService.availabilityMessage ?? L10n.tr("AI機能は現在利用できません")
             showingError = true
             selectedPhotoItem = nil
             return
@@ -130,7 +130,7 @@ class CreateChecklistViewModel: ObservableObject {
     func processCapturedImage(_ image: UIImage) async {
         aiService.refreshAvailability()
         guard !aiService.blocksInteraction else {
-            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            errorMessage = aiService.availabilityMessage ?? L10n.tr("AI機能は現在利用できません")
             showingError = true
             return
         }
@@ -161,13 +161,13 @@ class CreateChecklistViewModel: ObservableObject {
     func processVoiceInput() async {
         aiService.refreshAvailability()
         guard !aiService.blocksInteraction else {
-            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            errorMessage = aiService.availabilityMessage ?? L10n.tr("AI機能は現在利用できません")
             showingError = true
             return
         }
 
         guard !speechRecognitionService.transcribedText.isEmpty else {
-            errorMessage = "音声が認識されませんでした"
+            errorMessage = L10n.tr("音声が認識されませんでした")
             showingError = true
             return
         }
@@ -197,13 +197,13 @@ class CreateChecklistViewModel: ObservableObject {
     func processTextInput() async {
         aiService.refreshAvailability()
         guard !aiService.blocksInteraction else {
-            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            errorMessage = aiService.availabilityMessage ?? L10n.tr("AI機能は現在利用できません")
             showingError = true
             return
         }
 
         guard !inputText.isEmpty else {
-            errorMessage = "テキストを入力してください"
+            errorMessage = L10n.tr("テキストを入力してください")
             showingError = true
             return
         }
@@ -232,13 +232,13 @@ class CreateChecklistViewModel: ObservableObject {
     func generateChecklistFromCondition() async {
         aiService.refreshAvailability()
         guard !aiService.blocksInteraction else {
-            errorMessage = aiService.availabilityMessage ?? "AI機能は現在利用できません"
+            errorMessage = aiService.availabilityMessage ?? L10n.tr("AI機能は現在利用できません")
             showingError = true
             return
         }
 
         guard !conditionText.isEmpty else {
-            errorMessage = "条件を入力してください"
+            errorMessage = L10n.tr("条件を入力してください")
             showingError = true
             return
         }
@@ -288,13 +288,13 @@ class CreateChecklistViewModel: ObservableObject {
             }
 
         guard !trimmedTitle.isEmpty else {
-            errorMessage = "タイトルを入力してください"
+            errorMessage = L10n.tr("タイトルを入力してください")
             showingError = true
             return
         }
 
         guard !validItems.isEmpty else {
-            errorMessage = "項目を1件以上追加してください"
+            errorMessage = L10n.tr("項目を1件以上追加してください")
             showingError = true
             return
         }

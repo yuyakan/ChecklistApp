@@ -8,7 +8,9 @@ class SpeechRecognitionService: ObservableObject {
     @Published var isRecording = false
     @Published var errorMessage: String?
 
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "ja-JP"))
+    private var speechRecognizer: SFSpeechRecognizer? {
+        SFSpeechRecognizer(locale: Locale(identifier: AppLanguage.current.speechLocaleIdentifier))
+    }
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
@@ -29,7 +31,7 @@ class SpeechRecognitionService: ObservableObject {
                     if status == .authorized {
                         self?.requestMicrophoneAndStartRecording()
                     } else {
-                        self?.errorMessage = "音声認識の権限が必要です。設定アプリ > プライバシーとセキュリティ > 音声認識 で許可してください。"
+                        self?.errorMessage = L10n.tr("音声認識の権限が必要です。設定アプリ > プライバシーとセキュリティ > 音声認識 で許可してください。")
                     }
                 }
             }
@@ -37,7 +39,7 @@ class SpeechRecognitionService: ObservableObject {
             requestMicrophoneAndStartRecording()
         case .denied, .restricted:
             DispatchQueue.main.async {
-                self.errorMessage = "音声認識の権限がありません。設定アプリ > プライバシーとセキュリティ > 音声認識 で許可してください。"
+                self.errorMessage = L10n.tr("音声認識の権限がありません。設定アプリ > プライバシーとセキュリティ > 音声認識 で許可してください。")
             }
         @unknown default:
             break
@@ -54,7 +56,7 @@ class SpeechRecognitionService: ObservableObject {
                     if granted {
                         self?.beginRecording()
                     } else {
-                        self?.errorMessage = "マイクの権限が必要です。設定アプリ > プライバシーとセキュリティ > マイク で許可してください。"
+                        self?.errorMessage = L10n.tr("マイクの権限が必要です。設定アプリ > プライバシーとセキュリティ > マイク で許可してください。")
                     }
                 }
             }
@@ -62,7 +64,7 @@ class SpeechRecognitionService: ObservableObject {
             beginRecording()
         case .denied:
             DispatchQueue.main.async {
-                self.errorMessage = "マイクの権限がありません。設定アプリ > プライバシーとセキュリティ > マイク で許可してください。"
+                self.errorMessage = L10n.tr("マイクの権限がありません。設定アプリ > プライバシーとセキュリティ > マイク で許可してください。")
             }
         @unknown default:
             break
@@ -80,7 +82,7 @@ class SpeechRecognitionService: ObservableObject {
     private func beginRecording() {
         guard let speechRecognizer = speechRecognizer, speechRecognizer.isAvailable else {
             DispatchQueue.main.async {
-                self.errorMessage = "音声認識が利用できません"
+                self.errorMessage = L10n.tr("音声認識が利用できません")
             }
             return
         }

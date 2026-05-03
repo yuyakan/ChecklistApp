@@ -33,8 +33,10 @@ struct SplashView: View {
     }
 }
 
+#if false
 #Preview {
     SplashView {
         print("Splash finished")
     }
 }
+#endif

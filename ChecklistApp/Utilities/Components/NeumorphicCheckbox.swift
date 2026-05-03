@@ -56,6 +56,7 @@ struct NeumorphicCircleCheckbox: View {
     }
 }
 
+#if false
 #Preview {
     ZStack {
         Color.neumorphicBackground.ignoresSafeArea()
@@ -73,3 +74,4 @@ struct NeumorphicCircleCheckbox: View {
         }
     }
 }
+#endif

@@ -12,15 +12,15 @@ enum AIServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sessionCreationFailed:
-            return "AIセッションの作成に失敗しました"
+            return L10n.tr("AIセッションの作成に失敗しました")
         case .generationFailed:
-            return "生成に失敗しました"
+            return L10n.tr("生成に失敗しました")
         case .unsupportedDevice:
-            return "このデバイスではAI機能がサポートされていません"
+            return L10n.tr("このデバイスではAI機能がサポートされていません")
         case .appleIntelligenceNotEnabled:
-            return "Apple Intelligenceがオフになっています"
+            return L10n.tr("Apple Intelligenceがオフになっています")
         case .modelNotReady:
-            return "AIモデルの準備が完了していません"
+            return L10n.tr("AIモデルの準備が完了していません")
         }
     }
 }
@@ -56,7 +56,7 @@ enum AIAvailabilityState: Equatable {
 class ChecklistAIService: ObservableObject {
     @Published var isProcessing = false
     @Published var errorMessage: String?
-    @Published private(set) var availabilityState: AIAvailabilityState = .temporarilyUnavailable(message: "AI機能の利用状態を確認しています")
+    @Published private(set) var availabilityState: AIAvailabilityState = .temporarilyUnavailable(message: L10n.tr("AI機能の利用状態を確認しています"))
 
     private var session: LanguageModelSession?
     private let model = SystemLanguageModel.default
@@ -94,19 +94,19 @@ class ChecklistAIService: ObservableObject {
             availabilityState = .available
             setupSession()
         case .unavailable(.deviceNotEligible):
-            availabilityState = .temporarilyUnavailable(message: "Apple Intelligenceを利用できないため、標準モードでリストを作成します")
+            availabilityState = .temporarilyUnavailable(message: L10n.tr("Apple Intelligenceを利用できないため、標準モードでリストを作成します"))
             session = nil
         case .unavailable(.appleIntelligenceNotEnabled):
-            availabilityState = .temporarilyUnavailable(message: "Apple Intelligenceがオフのため、標準モードでリストを作成します")
+            availabilityState = .temporarilyUnavailable(message: L10n.tr("Apple Intelligenceがオフのため、標準モードでリストを作成します"))
             session = nil
         case .unavailable(.modelNotReady):
-            availabilityState = .preparing(message: "AIモデルを準備中のため、標準モードでリストを作成します")
+            availabilityState = .preparing(message: L10n.tr("AIモデルを準備中のため、標準モードでリストを作成します"))
             session = nil
         case .unavailable:
-            availabilityState = .temporarilyUnavailable(message: "AI機能は一時的に利用できないため、標準モードでリストを作成します")
+            availabilityState = .temporarilyUnavailable(message: L10n.tr("AI機能は一時的に利用できないため、標準モードでリストを作成します"))
             session = nil
         @unknown default:
-            availabilityState = .temporarilyUnavailable(message: "AI機能は一時的に利用できないため、標準モードでリストを作成します")
+            availabilityState = .temporarilyUnavailable(message: L10n.tr("AI機能は一時的に利用できないため、標準モードでリストを作成します"))
             session = nil
         }
     }
@@ -138,41 +138,51 @@ class ChecklistAIService: ObservableObject {
         return session
     }
 
+    private var promptLanguage: AppLanguage {
+        AppLanguage.current
+    }
+
+    private func extractionPrompt(for text: String, source: InputSource) -> String {
+        """
+        Analyze the following text and extract a clean checklist.
+
+        Requirements:
+        - Respond entirely in \(promptLanguage.localizedResponseLanguageName)
+        - Deduplicate and organize the items
+        - Infer a suitable title
+        - Choose one category from: shopping, task, procedure, travel, cooking, other
+        - If the checklist is a list of objects, item names should be nouns or short noun phrases
+        - If the checklist is a list of actions, item names may contain verbs
+
+        Source type: \(source.rawValue)
+        Input text:
+        \(text)
+        """
+    }
+
+    private func generationPrompt(for condition: String) -> String {
+        """
+        Create a practical checklist about "\(condition)".
+
+        Requirements:
+        - Respond entirely in \(promptLanguage.localizedResponseLanguageName)
+        - Cover the commonly needed items
+        - Add short notes to important items
+        - Provide practical advice in tips
+        - Choose one category from: shopping, task, procedure, travel, cooking, other
+        - Every item's priority must be "none"
+        - If the checklist is a list of objects, item names should be nouns or short noun phrases
+        - If the checklist is a list of actions, item names may contain verbs
+        """
+    }
+
     // MARK: - 入力テキストからチェックリスト抽出
 
     func extractChecklist(from text: String, source: InputSource) async throws -> ChecklistExtraction {
         isProcessing = true
         defer { isProcessing = false }
 
-        let sourceDescription: String
-        switch source {
-        case .manual:
-            sourceDescription = "手動で入力された"
-        case .photo:
-            sourceDescription = "写真から抽出された"
-        case .voice:
-            sourceDescription = "音声から認識された"
-        case .text:
-            sourceDescription = "入力された"
-        case .aiGenerated:
-            sourceDescription = "指定された"
-        }
-
-        let prompt = """
-        以下の\(sourceDescription)テキストを分析し、チェックリストとして適切な項目を抽出してください。
-
-        - 重複を避け、整理してください
-        - 適切なタイトルとカテゴリを推測してください
-
-        項目名の形式について（重要）:
-        - 買い物リスト・材料リスト・持ち物リストなど「物」を列挙する場合は、名詞・単語のみで記載してください
-          例: ○「りんご」「牛乳」「パスポート」 ×「りんごを買う」「牛乳を購入する」
-        - 手順・作業・タスクなど「動作」を列挙する場合のみ、動詞を含めた文で記載してください
-          例: ○「予約を確認する」「書類を提出する」
-
-        入力テキスト:
-        \(text)
-        """
+        let prompt = extractionPrompt(for: text, source: source)
 
         guard canUseFoundationModels() else {
             return fallbackExtraction(from: text, source: source)
@@ -193,24 +203,7 @@ class ChecklistAIService: ObservableObject {
         isProcessing = true
         defer { isProcessing = false }
 
-        let prompt = """
-        「\(condition)」に関する実用的なチェックリストを作成してください。
-
-        要件:
-        - 一般的に必要とされる項目を網羅的にリストアップしてください
-        - 重要な項目には補足説明を追加してください
-        - 実践的で役立つアドバイスをtipsとして提供してください
-        - 適切なカテゴリを選択してください（shopping, task, procedure, travel, cooking, other）
-
-        項目名の形式について（重要）:
-        - 買い物リスト・材料リスト・持ち物リストなど「物」を列挙する場合は、名詞・単語のみで記載してください
-          例: ○「りんご」「牛乳」「パスポート」 ×「りんごを買う」「牛乳を購入する」
-        - 手順・作業・タスクなど「動作」を列挙する場合のみ、動詞を含めた文で記載してください
-          例: ○「予約を確認する」「書類を提出する」
-
-        優先度について:
-        - 全ての項目の priority は必ず "none" にしてください
-        """
+        let prompt = generationPrompt(for: condition)
 
         guard canUseFoundationModels() else {
             return fallbackGeneration(for: condition)
@@ -353,27 +346,27 @@ class ChecklistAIService: ObservableObject {
 
         switch inferCategory(from: text) {
         case .shopping:
-            return "買い物リスト"
+            return L10n.tr("買い物リスト")
         case .task:
-            return "タスクリスト"
+            return L10n.tr("タスクリスト")
         case .procedure:
-            return "手続きリスト"
+            return L10n.tr("手続きリスト")
         case .travel:
-            return "持ち物リスト"
+            return L10n.tr("持ち物リスト")
         case .cooking:
-            return "材料リスト"
+            return L10n.tr("材料リスト")
         case .other:
             switch source {
             case .photo:
-                return "写真から作成したリスト"
+                return L10n.tr("写真から作成したリスト")
             case .voice:
-                return "音声から作成したリスト"
+                return L10n.tr("音声から作成したリスト")
             case .text:
-                return "テキストから作成したリスト"
+                return L10n.tr("テキストから作成したリスト")
             case .aiGenerated:
-                return "自動作成リスト"
+                return L10n.tr("自動作成リスト")
             case .manual:
-                return "チェックリスト"
+                return L10n.tr("チェックリスト")
             }
         }
     }
@@ -385,17 +378,17 @@ class ChecklistAIService: ObservableObject {
 
         switch category {
         case .shopping:
-            return "\(condition)の買い物リスト"
+            return L10n.generatedChecklistTitle(condition, suffixKey: "買い物リスト")
         case .task:
-            return "\(condition)のチェックリスト"
+            return L10n.generatedChecklistTitle(condition, suffixKey: "チェックリスト")
         case .procedure:
-            return "\(condition)の手続きリスト"
+            return L10n.generatedChecklistTitle(condition, suffixKey: "手続きリスト")
         case .travel:
-            return "\(condition)の持ち物リスト"
+            return L10n.generatedChecklistTitle(condition, suffixKey: "持ち物リスト")
         case .cooking:
-            return "\(condition)の材料リスト"
+            return L10n.generatedChecklistTitle(condition, suffixKey: "材料リスト")
         case .other:
-            return "\(condition)のチェックリスト"
+            return L10n.generatedChecklistTitle(condition, suffixKey: "チェックリスト")
         }
     }
 
@@ -444,30 +437,30 @@ class ChecklistAIService: ObservableObject {
 
         switch category {
         case .procedure:
-            return "事前に受付時間や必要書類を確認しておくとスムーズです。"
+            return L10n.tr("事前に受付時間や必要書類を確認しておくとスムーズです。")
         case .travel:
-            return "出発前日に不足がないか見直してください。"
+            return L10n.tr("出発前日に不足がないか見直してください。")
         case .cooking:
-            return "分量や代用品を事前に確認しておくと調理しやすくなります。"
+            return L10n.tr("分量や代用品を事前に確認しておくと調理しやすくなります。")
         default:
-            return "必要に応じて詳細を追記してください。"
+            return L10n.tr("必要に応じて詳細を追記してください。")
         }
     }
 
     private func fallbackTips(for category: Category) -> String {
         switch category {
         case .shopping:
-            return "買い物前に在庫確認をすると無駄な購入を減らせます。"
+            return L10n.tr("買い物前に在庫確認をすると無駄な購入を減らせます。")
         case .task:
-            return "先に期限と優先度を決めると進めやすくなります。"
+            return L10n.tr("先に期限と優先度を決めると進めやすくなります。")
         case .procedure:
-            return "提出先、必要書類、期限の3点を最初に確認してください。"
+            return L10n.tr("提出先、必要書類、期限の3点を最初に確認してください。")
         case .travel:
-            return "天気と移動手段を確認してから荷物を最終調整してください。"
+            return L10n.tr("天気と移動手段を確認してから荷物を最終調整してください。")
         case .cooking:
-            return "材料と調味料を先に並べると作業が安定します。"
+            return L10n.tr("材料と調味料を先に並べると作業が安定します。")
         case .other:
-            return "まず必要事項を洗い出し、終わった項目から順にチェックしてください。"
+            return L10n.tr("まず必要事項を洗い出し、終わった項目から順にチェックしてください。")
         }
     }
 }

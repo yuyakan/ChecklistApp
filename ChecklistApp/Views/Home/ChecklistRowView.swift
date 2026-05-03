@@ -30,7 +30,7 @@ struct ChecklistRowView: View {
                     .tint(progressColor)
 
                 // 進捗テキスト
-                Text("\(checklist.completedCount)/\(checklist.totalCount)")
+                Text(L10n.progressFraction(completed: checklist.completedCount, total: checklist.totalCount))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -61,6 +61,7 @@ struct ChecklistRowView: View {
     }
 }
 
+#if false
 #Preview {
     let checklist = Checklist(
         title: "買い物リスト",
@@ -78,3 +79,4 @@ struct ChecklistRowView: View {
         ChecklistRowView(checklist: checklist)
     }
 }
+#endif

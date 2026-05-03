@@ -1,0 +1,5 @@
+"CFBundleDisplayName" = "Checkly";
+"NSCameraUsageDescription" = "写真からチェックリストを作成するためにカメラを使用します";
+"NSMicrophoneUsageDescription" = "音声からチェックリストを作成するためにマイクを使用します";
+"NSPhotoLibraryAddUsageDescription" = "写真からチェックリストを作成するためにフォトライブラリにアクセスします";
+"NSSpeechRecognitionUsageDescription" = "音声をテキストに変換してチェックリストを作成するために音声認識を使用します";
