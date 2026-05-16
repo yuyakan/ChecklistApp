@@ -114,11 +114,14 @@ class CreateChecklistViewModel: ObservableObject {
             let recognizedText = try await textRecognitionService.recognizeText(from: image)
             extractedText = recognizedText
 
-            // AIでチェックリストに変換
-            let extraction = try await aiService.extractChecklist(from: recognizedText, source: .photo)
-            generatedDraft = aiService.createDraft(from: extraction, source: .photo)
+            // AI生成と広告表示を並列実行
+            async let adWait: Void = AdMobService.shared.showAdAndWait()
+            async let extraction = aiService.extractChecklist(from: recognizedText, source: .photo)
+            let (_, result) = try await (adWait, extraction)
+            generatedDraft = aiService.createDraft(from: result, source: .photo)
+            isProcessing = false
             showingResult = true
-
+            return
         } catch {
             errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true
@@ -143,11 +146,14 @@ class CreateChecklistViewModel: ObservableObject {
             let recognizedText = try await textRecognitionService.recognizeText(from: image)
             extractedText = recognizedText
 
-            // AIでチェックリストに変換
-            let extraction = try await aiService.extractChecklist(from: recognizedText, source: .photo)
-            generatedDraft = aiService.createDraft(from: extraction, source: .photo)
+            // AI生成と広告表示を並列実行
+            async let adWait: Void = AdMobService.shared.showAdAndWait()
+            async let extraction = aiService.extractChecklist(from: recognizedText, source: .photo)
+            let (_, result) = try await (adWait, extraction)
+            generatedDraft = aiService.createDraft(from: result, source: .photo)
+            isProcessing = false
             showingResult = true
-
+            return
         } catch {
             errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true
@@ -179,11 +185,14 @@ class CreateChecklistViewModel: ObservableObject {
             let recognizedText = speechRecognitionService.transcribedText
             extractedText = recognizedText
 
-            // AIでチェックリストに変換
-            let extraction = try await aiService.extractChecklist(from: recognizedText, source: .voice)
-            generatedDraft = aiService.createDraft(from: extraction, source: .voice)
+            // AI生成と広告表示を並列実行
+            async let adWait: Void = AdMobService.shared.showAdAndWait()
+            async let extraction = aiService.extractChecklist(from: recognizedText, source: .voice)
+            let (_, result) = try await (adWait, extraction)
+            generatedDraft = aiService.createDraft(from: result, source: .voice)
+            isProcessing = false
             showingResult = true
-
+            return
         } catch {
             errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true
@@ -214,11 +223,14 @@ class CreateChecklistViewModel: ObservableObject {
         do {
             extractedText = inputText
 
-            // AIでチェックリストに変換
-            let extraction = try await aiService.extractChecklist(from: inputText, source: .text)
-            generatedDraft = aiService.createDraft(from: extraction, source: .text)
+            // AI生成と広告表示を並列実行
+            async let adWait: Void = AdMobService.shared.showAdAndWait()
+            async let extraction = aiService.extractChecklist(from: inputText, source: .text)
+            let (_, result) = try await (adWait, extraction)
+            generatedDraft = aiService.createDraft(from: result, source: .text)
+            isProcessing = false
             showingResult = true
-
+            return
         } catch {
             errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true
@@ -247,10 +259,14 @@ class CreateChecklistViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            let generation = try await aiService.generateChecklist(for: conditionText)
-            generatedDraft = aiService.createDraft(from: generation)
+            // AI生成と広告表示を並列実行
+            async let adWait: Void = AdMobService.shared.showAdAndWait()
+            async let generation = aiService.generateChecklist(for: conditionText)
+            let (_, result) = try await (adWait, generation)
+            generatedDraft = aiService.createDraft(from: result)
+            isProcessing = false
             showingResult = true
-
+            return
         } catch {
             errorMessage = UserErrorMessageResolver.message(for: error, context: .checklistCreation)
             showingError = true

@@ -26,6 +26,9 @@ struct ChecklistApp: App {
 
         // Darwin Notificationをリッスン
         setupDarwinNotificationObserver()
+
+        // AdMob SDK初期化
+        AdMobService.shared.initialize()
     }
 
     var body: some Scene {
@@ -46,6 +49,7 @@ struct ChecklistApp: App {
             if newPhase == .active {
                 let context = coreDataStack.container.viewContext
                 LiveActivityService.shared.checkPendingUpdates(with: context)
+                AdMobService.shared.reloadIfNeeded()
             }
         }
     }

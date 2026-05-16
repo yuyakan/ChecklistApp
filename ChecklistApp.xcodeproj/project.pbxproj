@@ -10,6 +10,7 @@
 		4BC02EBB2F00E7A8006D7EF3 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BC02EBA2F00E7A6006D7EF3 /* WidgetKit.framework */; };
 		4BC02EBD2F00E7A8006D7EF3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BC02EBC2F00E7A8006D7EF3 /* SwiftUI.framework */; };
 		4BC02ECE2F00E7AF006D7EF3 /* ChecklistWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4BC02EB82F00E7A6006D7EF3 /* ChecklistWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		ADMOB001ADMOB001ADMOB001A /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = ADMOB001ADMOB001ADMOB001B /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -99,6 +100,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ADMOB001ADMOB001ADMOB001A /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,6 +167,7 @@
 			);
 			name = ChecklistApp;
 			packageProductDependencies = (
+				ADMOB001ADMOB001ADMOB001B /* GoogleMobileAds */,
 			);
 			productName = ChecklistApp;
 			productReference = 4BC02E602F00E742006D7EF3 /* ChecklistApp.app */;
@@ -227,6 +230,9 @@
 			);
 			mainGroup = 4BC02E572F00E742006D7EF3;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				ADMOB001ADMOB001ADMOB0010 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4BC02E612F00E742006D7EF3 /* Products */;
 			projectDirPath = "";
@@ -430,7 +436,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kanbe1365.ChecklistApp2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -472,7 +478,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kanbe1365.ChecklistApp2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -586,6 +592,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		ADMOB001ADMOB001ADMOB0010 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		ADMOB001ADMOB001ADMOB001B /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ADMOB001ADMOB001ADMOB0010 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4BC02E582F00E742006D7EF3 /* Project object */;
 }
